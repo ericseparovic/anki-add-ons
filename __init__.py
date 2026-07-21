@@ -18,16 +18,113 @@ def markdownPreview(editor):
             var style = document.createElement('style');
             style.type = 'text/css';
             style.innerText = `
+                #markdown-area {
+                    --ctp-base: #eff1f5;
+                    --ctp-mantle: #e6e9ef;
+                    --ctp-surface0: #ccd0da;
+                    --ctp-surface1: #bcc0cc;
+                    --ctp-text: #4c4f69;
+                    --ctp-subtext1: #5c5f77;
+                    --ctp-blue: #1e66f5;
+                    --ctp-mauve: #8839ef;
+                    --ctp-pink: #ea76cb;
+                    --ctp-red: #d20f39;
+                    --ctp-yellow: #df8e1d;
+                    --ctp-peach: #fe640b;
+                    --ctp-green: #40a02b;
+                    color: var(--ctp-text);
+                    background-color: var(--ctp-base);
+                    border-radius: 8px;
+                }
+                .nightMode #markdown-area,
+                #markdown-area.nightMode {
+                    --ctp-base: #1e1e2e;
+                    --ctp-mantle: #181825;
+                    --ctp-surface0: #313244;
+                    --ctp-surface1: #45475a;
+                    --ctp-text: #cdd6f4;
+                    --ctp-subtext1: #bac2de;
+                    --ctp-blue: #89b4fa;
+                    --ctp-mauve: #cba6f7;
+                    --ctp-pink: #f5c2e7;
+                    --ctp-red: #f38ba8;
+                    --ctp-yellow: #f9e2af;
+                    --ctp-peach: #fab387;
+                    --ctp-green: #a6e3a1;
+                }
                 table, th, td {
-                    border: 1px solid black;
+                    border: 1px solid var(--ctp-surface1);
                     border-collapse: collapse;
                 }
+                h1, h2, h3, h4, h5, h6 {
+                    color: var(--ctp-text);
+                    line-height: 1.25;
+                    margin: 1em 0 0.5em;
+                }
+                h1 {
+                    color: var(--ctp-mauve);
+                    font-size: 1.55em;
+                    border-bottom: 2px solid var(--ctp-mauve);
+                    padding-bottom: 0.2em;
+                }
+                h2 {
+                    color: var(--ctp-blue);
+                    font-size: 1.35em;
+                    border-left: 5px solid var(--ctp-blue);
+                    padding-left: 0.5em;
+                }
+                h3 {
+                    color: var(--ctp-green);
+                    font-size: 1.2em;
+                    border-left: 4px solid var(--ctp-green);
+                    padding-left: 0.45em;
+                }
+                h4 {
+                    color: var(--ctp-peach);
+                    font-size: 1.08em;
+                    border-left: 4px solid var(--ctp-peach);
+                    padding-left: 0.45em;
+                }
+                h5 {
+                    color: var(--ctp-pink);
+                    font-size: 0.98em;
+                    border-left: 3px solid var(--ctp-pink);
+                    padding-left: 0.4em;
+                }
+                h6 {
+                    color: var(--ctp-subtext1);
+                    font-size: 0.9em;
+                    border-left: 3px solid var(--ctp-subtext1);
+                    padding-left: 0.4em;
+                }
+                code {
+                    background-color: var(--ctp-mantle);
+                    color: var(--ctp-text);
+                    border-radius: 4px;
+                    padding: 0.1em 0.3em;
+                }
                 pre code {
-                    background-color: #eee;
-                    border: 1px solid #999;
+                    background-color: var(--ctp-mantle);
+                    border: 1px solid var(--ctp-surface0);
                     display: block;
                     padding: 20px;
                     overflow: auto;
+                }
+                blockquote {
+                    color: var(--ctp-subtext1);
+                    border-left: 4px solid var(--ctp-surface0);
+                    padding-left: 12px;
+                }
+                mark {
+                    background-color: var(--ctp-yellow);
+                    color: var(--ctp-base);
+                }
+                a {
+                    color: var(--ctp-blue);
+                }
+                .cloze {
+                    color: var(--ctp-red);
+                    font-weight: bold;
                 }`;
             document.head.appendChild(style);
         """)
