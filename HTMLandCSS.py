@@ -147,7 +147,7 @@ HTMLforEditor = """
 					str = str.replace(/<br\s*[\/]?[^>]*>/gi, "\\n");
 					str = str.replace(/<div[^>]*>/gi, "\\n");
 					// Thanks Graham A!
-					str = str.replace(/<[\/]?span[^>]*>/gi, "")
+					str = str.replace(/<span(?![^>]*class=["'][^"']*\\bcloze\\b[^"']*["'])[^>]*>(.*?)<\/span>/gi, "$1")
 					str.replace(/<\/div[^>]*>/g, "\\n");
 					return replaceHTMLElementsInString(str);
 				}
@@ -270,7 +270,7 @@ front = """
 		str = str.replace(/<br\s*[\/]?[^>]*>/gi, "\\n");
 		str = str.replace(/<div[^>]*>/gi, "\\n");
 		// Thanks Graham A!
-		str = str.replace(/<[\/]?span[^>]*>/gi, "")
+		str = str.replace(/<span(?![^>]*class=["'][^"']*\\bcloze\\b[^"']*["'])[^>]*>(.*?)<\/span>/gi, "$1")
 		str.replace(/<\/div[^>]*>/g, "\\n");
 		return replaceHTMLElementsInString(str);
 	}
@@ -400,7 +400,7 @@ back = """
 		str = str.replace(/<br\s*[\/]?[^>]*>/gi, "\\n");
 		str = str.replace(/<div[^>]*>/gi, "\\n");
 		// Thanks Graham A!
-		str = str.replace(/<[\/]?span[^>]*>/gi, "")
+		str = str.replace(/<span(?![^>]*class=["'][^"']*\\bcloze\\b[^"']*["'])[^>]*>(.*?)<\/span>/gi, "$1")
 		str.replace(/<\/div[^>]*>/g, "\\n");
 		return replaceHTMLElementsInString(str);
 	}
@@ -519,7 +519,7 @@ front_cloze = """
 		str = str.replace(/<br\s*[\/]?[^>]*>/gi, "\\n");
 		str = str.replace(/<div[^>]*>/gi, "\\n");
 		// Thanks Graham A!
-		str = str.replace(/<[\/]?span[^>]*>/gi, "")
+		str = str.replace(/<span(?![^>]*class=["'][^"']*\\bcloze\\b[^"']*["'])[^>]*>(.*?)<\/span>/gi, "$1")
 		str.replace(/<\/div[^>]*>/g, "\\n");
 		return replaceHTMLElementsInString(str);
 	}
@@ -646,7 +646,7 @@ back_cloze = """
 		str = str.replace(/<br\s*[\/]?[^>]*>/gi, "\\n");
 		str = str.replace(/<div[^>]*>/gi, "\\n");
 		// Thanks Graham A!
-		str = str.replace(/<[\/]?span[^>]*>/gi, "")
+		str = str.replace(/<span(?![^>]*class=["'][^"']*\\bcloze\\b[^"']*["'])[^>]*>(.*?)<\/span>/gi, "$1")
 		str.replace(/<\/div[^>]*>/g, "\\n");
 		return replaceHTMLElementsInString(str);
 	}
@@ -682,5 +682,42 @@ pre code {
   display: block;
   padding: 20px;
   overflow: auto;
+}
+.nightMode .card {
+  color: #e6edf3;
+  background-color: #0d1117;
+}
+.nightMode table,
+.nightMode th,
+.nightMode td {
+  border-color: #57606a;
+}
+.nightMode code {
+  background-color: #161b22;
+  color: #e6edf3;
+  border-radius: 4px;
+  padding: 0.1em 0.3em;
+}
+.nightMode pre code,
+.nightMode .hljs {
+  background-color: #161b22;
+  color: #e6edf3;
+  border-color: #30363d;
+}
+.nightMode .cloze {
+  color: #ff7b72;
+  font-weight: bold;
+}
+.nightMode blockquote {
+  color: #8b949e;
+  border-left: 4px solid #30363d;
+  padding-left: 12px;
+}
+.nightMode mark {
+  background-color: #9e6a03;
+  color: #fff8c5;
+}
+.nightMode a {
+  color: #79c0ff;
 }
 """
