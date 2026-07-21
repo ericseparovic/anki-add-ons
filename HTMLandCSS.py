@@ -92,8 +92,9 @@ HTMLforEditor = """
 				}
 
 				function render(text) {
-					renderMath(text);
+					area.textContent = replaceInString(text);
 					markdown(text);
+					renderMath(text);
 					show();
 				}
 
@@ -103,14 +104,14 @@ HTMLforEditor = """
 
 
 				function renderMath(text) {
-					text = replaceInString(text);
-					area.textContent = text;
 					renderMathInElement(area, {
 						delimiters:  [
 								{left: "$$", right: "$$", display: true},
-								{left: "$", right: "$", display: false}
+								{left: "\\\\(", right: "\\\\)", display: false},
+								{left: "\\\\[", right: "\\\\]", display: true}
 						],
-															throwOnError : false
+						ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code"],
+																	throwOnError : false
 					});
 				}
 				function markdown() {
@@ -124,8 +125,22 @@ HTMLforEditor = """
 																	return ''; // use external default escaping
 															}}).use(markdownItMark);
 					text = replaceHTMLElementsInString(area.innerHTML);
+					text = protectMathDelimiters(text);
 					text = md.render(text);
+					text = restoreMathDelimiters(text);
 					area.innerHTML = text.replace(/&lt;\/span&gt;/gi,"\\\\");
+				}
+				function protectMathDelimiters(str) {
+					return str.split("\\\\(").join("ANKI_KATEX_INLINE_OPEN")
+						.split("\\\\)").join("ANKI_KATEX_INLINE_CLOSE")
+						.split("\\\\[").join("ANKI_KATEX_DISPLAY_OPEN")
+						.split("\\\\]").join("ANKI_KATEX_DISPLAY_CLOSE");
+				}
+				function restoreMathDelimiters(str) {
+					return str.split("ANKI_KATEX_INLINE_OPEN").join("\\\\(")
+						.split("ANKI_KATEX_INLINE_CLOSE").join("\\\\)")
+						.split("ANKI_KATEX_DISPLAY_OPEN").join("\\\\[")
+						.split("ANKI_KATEX_DISPLAY_CLOSE").join("\\\\]");
 				}
 				function replaceInString(str) {
 					str = str.replace(/<[\/]?pre[^>]*>/gi, "");
@@ -201,8 +216,8 @@ front = """
 
 
 	function render() {
-		renderMath("front");
 		markdown("front");
+		renderMath("front");
 		show();
 	}
 
@@ -211,14 +226,13 @@ front = """
 	}
 
 	function renderMath(ID) {
-		let text = document.getElementById(ID).innerHTML;
-		text = replaceInString(text);
-		document.getElementById(ID).textContent = text;
 		renderMathInElement(document.getElementById(ID), {
 			delimiters:  [
   				{left: "$$", right: "$$", display: true},
-  				{left: "$", right: "$", display: false}
+				{left: "\\\\(", right: "\\\\)", display: false},
+				{left: "\\\\[", right: "\\\\]", display: true}
 			],
+            ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code"],
             throwOnError : false
 		});
 	}
@@ -233,9 +247,23 @@ front = """
 
                             return ''; // use external default escaping
                         }}).use(markdownItMark);
-		let text = replaceHTMLElementsInString(document.getElementById(ID).innerHTML);
+		let text = replaceInString(document.getElementById(ID).innerHTML);
+		text = protectMathDelimiters(text);
 		text = md.render(text);
+		text = restoreMathDelimiters(text);
 		document.getElementById(ID).innerHTML = text.replace(/&lt;\/span&gt;/gi,"\\\\");
+	}
+	function protectMathDelimiters(str) {
+		return str.split("\\\\(").join("ANKI_KATEX_INLINE_OPEN")
+			.split("\\\\)").join("ANKI_KATEX_INLINE_CLOSE")
+			.split("\\\\[").join("ANKI_KATEX_DISPLAY_OPEN")
+			.split("\\\\]").join("ANKI_KATEX_DISPLAY_CLOSE");
+	}
+	function restoreMathDelimiters(str) {
+		return str.split("ANKI_KATEX_INLINE_OPEN").join("\\\\(")
+			.split("ANKI_KATEX_INLINE_CLOSE").join("\\\\)")
+			.split("ANKI_KATEX_DISPLAY_OPEN").join("\\\\[")
+			.split("ANKI_KATEX_DISPLAY_CLOSE").join("\\\\]");
 	}
 	function replaceInString(str) {
 		str = str.replace(/<[\/]?pre[^>]*>/gi, "");
@@ -315,10 +343,10 @@ back = """
 	}
 
 	function render() {
-		renderMath("front");
 		markdown("front");
-		renderMath("back");
+		renderMath("front");
 		markdown("back");
+		renderMath("back");
 		show();
 	}
 
@@ -329,14 +357,13 @@ back = """
 
 
 	function renderMath(ID) {
-		let text = document.getElementById(ID).innerHTML;
-		text = replaceInString(text);
-		document.getElementById(ID).textContent = text;
 		renderMathInElement(document.getElementById(ID), {
 			delimiters:  [
   				{left: "$$", right: "$$", display: true},
-  				{left: "$", right: "$", display: false}
+				{left: "\\\\(", right: "\\\\)", display: false},
+				{left: "\\\\[", right: "\\\\]", display: true}
 			],
+                        ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code"],
                         throwOnError : false
 		});
 	}
@@ -350,9 +377,23 @@ back = """
 
                             return ''; // use external default escaping
                         }}).use(markdownItMark);
-		let text = replaceHTMLElementsInString(document.getElementById(ID).innerHTML);
+		let text = replaceInString(document.getElementById(ID).innerHTML);
+		text = protectMathDelimiters(text);
 		text = md.render(text);
+		text = restoreMathDelimiters(text);
 		document.getElementById(ID).innerHTML = text.replace(/&lt;\/span&gt;/gi,"\\\\");
+	}
+	function protectMathDelimiters(str) {
+		return str.split("\\\\(").join("ANKI_KATEX_INLINE_OPEN")
+			.split("\\\\)").join("ANKI_KATEX_INLINE_CLOSE")
+			.split("\\\\[").join("ANKI_KATEX_DISPLAY_OPEN")
+			.split("\\\\]").join("ANKI_KATEX_DISPLAY_CLOSE");
+	}
+	function restoreMathDelimiters(str) {
+		return str.split("ANKI_KATEX_INLINE_OPEN").join("\\\\(")
+			.split("ANKI_KATEX_INLINE_CLOSE").join("\\\\)")
+			.split("ANKI_KATEX_DISPLAY_OPEN").join("\\\\[")
+			.split("ANKI_KATEX_DISPLAY_CLOSE").join("\\\\]");
 	}
 	function replaceInString(str) {
 		str = str.replace(/<[\/]?pre[^>]*>/gi, "");
@@ -427,22 +468,21 @@ front_cloze = """
 		});
 	}
 	function render() {
-		renderMath("front");
 		markdown("front");
+		renderMath("front");
 		show();
 	}
 	function show() {
 		document.getElementById("front").style.visibility = "visible";
 	}
 	function renderMath(ID) {
-		let text = document.getElementById(ID).innerHTML;
-		text = replaceInString(text);
-		document.getElementById(ID).textContent = text;
 		renderMathInElement(document.getElementById(ID), {
 			delimiters:  [
   				{left: "$$", right: "$$", display: true},
-  				{left: "$", right: "$", display: false}
+				{left: "\\\\(", right: "\\\\)", display: false},
+				{left: "\\\\[", right: "\\\\]", display: true}
 			],
+                        ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code"],
                         throwOnError : false
 		});
 	}
@@ -456,9 +496,23 @@ front_cloze = """
 
                             return ''; // use external default escaping
                         }}).use(markdownItMark);
-		let text = replaceHTMLElementsInString(document.getElementById(ID).innerHTML);
+		let text = replaceInString(document.getElementById(ID).innerHTML);
+		text = protectMathDelimiters(text);
 		text = md.render(text);
+		text = restoreMathDelimiters(text);
 		document.getElementById(ID).innerHTML = text.replace(/&lt;\/span&gt;/gi,"\\\\");
+	}
+	function protectMathDelimiters(str) {
+		return str.split("\\\\(").join("ANKI_KATEX_INLINE_OPEN")
+			.split("\\\\)").join("ANKI_KATEX_INLINE_CLOSE")
+			.split("\\\\[").join("ANKI_KATEX_DISPLAY_OPEN")
+			.split("\\\\]").join("ANKI_KATEX_DISPLAY_CLOSE");
+	}
+	function restoreMathDelimiters(str) {
+		return str.split("ANKI_KATEX_INLINE_OPEN").join("\\\\(")
+			.split("ANKI_KATEX_INLINE_CLOSE").join("\\\\)")
+			.split("ANKI_KATEX_DISPLAY_OPEN").join("\\\\[")
+			.split("ANKI_KATEX_DISPLAY_CLOSE").join("\\\\]");
 	}
 	function replaceInString(str) {
 		str = str.replace(/<[\/]?pre[^>]*>/gi, "");
@@ -536,10 +590,10 @@ back_cloze = """
 
 
 	function render() {
-		renderMath("back");
 		markdown("back");
-		renderMath("extra");
+		renderMath("back");
 		markdown("extra");	
+		renderMath("extra");
 		show();
 	}
 
@@ -549,14 +603,13 @@ back_cloze = """
 	}
 
 	function renderMath(ID) {
-		let text = document.getElementById(ID).innerHTML;
-		text = replaceInString(text);
-		document.getElementById(ID).textContent = text;
 		renderMathInElement(document.getElementById(ID), {
 			delimiters:  [
   				{left: "$$", right: "$$", display: true},
-  				{left: "$", right: "$", display: false}
+				{left: "\\\\(", right: "\\\\)", display: false},
+				{left: "\\\\[", right: "\\\\]", display: true}
 			],
+                        ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code"],
                         throwOnError : false
 		});
 	}
@@ -570,9 +623,23 @@ back_cloze = """
 
                             return ''; // use external default escaping
                         }}).use(markdownItMark);
-		let text = replaceHTMLElementsInString(document.getElementById(ID).innerHTML);
+		let text = replaceInString(document.getElementById(ID).innerHTML);
+		text = protectMathDelimiters(text);
 		text = md.render(text);
+		text = restoreMathDelimiters(text);
 		document.getElementById(ID).innerHTML = text.replace(/&lt;\/span&gt;/gi,"\\\\");
+	}
+	function protectMathDelimiters(str) {
+		return str.split("\\\\(").join("ANKI_KATEX_INLINE_OPEN")
+			.split("\\\\)").join("ANKI_KATEX_INLINE_CLOSE")
+			.split("\\\\[").join("ANKI_KATEX_DISPLAY_OPEN")
+			.split("\\\\]").join("ANKI_KATEX_DISPLAY_CLOSE");
+	}
+	function restoreMathDelimiters(str) {
+		return str.split("ANKI_KATEX_INLINE_OPEN").join("\\\\(")
+			.split("ANKI_KATEX_INLINE_CLOSE").join("\\\\)")
+			.split("ANKI_KATEX_DISPLAY_OPEN").join("\\\\[")
+			.split("ANKI_KATEX_DISPLAY_CLOSE").join("\\\\]");
 	}
 	function replaceInString(str) {
 		str = str.replace(/<[\/]?pre[^>]*>/gi, "");
