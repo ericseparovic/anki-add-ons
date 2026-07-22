@@ -1,19 +1,26 @@
+import json
 import os
 import shutil
 
 from .HTMLandCSS import HTMLforEditor, front, back, front_cloze, back_cloze, css
-from aqt import mw
-from anki.hooks import addHook
+from aqt import gui_hooks, mw
 import anki
 
 MODEL_NAME = 'KaTeX and Markdown'
-CONF_NAME = 'MDKATEX'
+ADDON_PACKAGE = mw.addonManager.addonFromModule(__name__)
+ADDON_WEB_PATH = f"/_addons/{ADDON_PACKAGE}"
+
+mw.addonManager.setWebExports(__name__, r".*\.(css|js|ttf|woff|woff2)")
 
 
 def markdownPreview(editor):
     """ This function runs when the user opens the editor, creates the markdown preview area """
-    if editor.note.model()["name"] in [MODEL_NAME + " Basic", MODEL_NAME + " Cloze"]:
-        editor.web.eval(HTMLforEditor)
+    note_type = editor.note.note_type()
+    if note_type and note_type["name"] in [MODEL_NAME + " Basic", MODEL_NAME + " Cloze"]:
+        field_names = [field["name"] for field in note_type["flds"]]
+        editor_js = HTMLforEditor.replace("__ADDON_WEB_PATH__", ADDON_WEB_PATH)
+        editor_js = editor_js.replace("__FIELD_NAMES__", json.dumps(field_names))
+        editor.web.eval(editor_js)
         editor.web.eval("""
             var style = document.createElement('style');
             style.type = 'text/css';
@@ -214,16 +221,16 @@ def markdownPreview(editor):
         """)
 
 
-addHook("loadNote", markdownPreview)
+gui_hooks.editor_did_load_note.append(markdownPreview)
 
 
-def create_model_if_necessacy():
+def create_model_if_necessary():
     """ 
     Runs when the user opens Anki, creates the two card types and also handles updating
     the card types CSS and HTML if the addon has a pending update
     """
-    model = mw.col.models.byName(MODEL_NAME + " Basic")
-    model_cloze = mw.col.models.byName(MODEL_NAME + " Cloze")
+    model = mw.col.models.by_name(MODEL_NAME + " Basic")
+    model_cloze = mw.col.models.by_name(MODEL_NAME + " Cloze")
 
     if not model:
         create_model()
@@ -278,8 +285,8 @@ def create_model_cloze():
 
 def update():
     """ Updates the card types the addon has a pending update """
-    model = mw.col.models.byName(MODEL_NAME + " Basic")
-    model_cloze = mw.col.models.byName(MODEL_NAME + " Cloze")
+    model = mw.col.models.by_name(MODEL_NAME + " Basic")
+    model_cloze = mw.col.models.by_name(MODEL_NAME + " Cloze")
 
     if model:
         model['tmpls'][0]['qfmt'] = front
@@ -321,4 +328,4 @@ def _add_file(path, filename):
         mw.col.media.add_file(path)
 
 
-addHook("profileLoaded", create_model_if_necessacy)
+gui_hooks.profile_did_open.append(create_model_if_necessary)

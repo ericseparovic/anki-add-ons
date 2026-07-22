@@ -17,39 +17,36 @@ HTMLforEditor = """
         area.style.width = '98%';
         area.style.height = '100%';
 
+        var markdownPreviewFieldNames = __FIELD_NAMES__;
+
         var fields = document.getElementById('fields');
-        var keyupFunc;
-        if (fields !== null) {
-			keyupFunc = function() {
-				var text = '# Field 1\\n' + fields.children[0].children[1].shadowRoot.children[2].innerHTML;
-				text += "\\n# Field 2\\n" + fields.children[1].children[1].shadowRoot.children[2].innerHTML;
-				render(text);
-			}
+        var previewParent = document.body;
 
-			document.body.appendChild(area);
-		}
-        
-        else {
+        if (fields === null) {
 			fields = document.getElementsByClassName('fields')[0];
-        
-			keyupFunc = function() {
-				var text = '# Field 1\\n' + fields.children[0].getElementsByClassName("rich-text-editable")[0].shadowRoot.children[2].innerHTML;
-				text += "\\n# Field 2\\n" + fields.children[1].getElementsByClassName("rich-text-editable")[0].shadowRoot.children[2].innerHTML;
+			previewParent = fields;
+		}
+
+		var keyupFunc = function() {
+			var text = collectFieldText();
+			if (text) {
 				render(text);
 			}
+		}
 
-			fields.appendChild(area);
+		if (fields && previewParent) {
+			previewParent.appendChild(area);
 		}
 
 
         var getResources = [
-					getCSS("_katex.css", "https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css"),
-					getCSS("_highlight.css", "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.0.1/styles/default.min.css"),
-					getScript("_highlight.js", "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.0.1/highlight.min.js"),
-					getScript("_katex.min.js", "https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.js"),
-					getScript("_auto-render.js", "https://cdn.jsdelivr.net/gh/Jwrede/Anki-KaTeX-Markdown/auto-render-cdn.js"),
-					getScript("_markdown-it.min.js", "https://cdnjs.cloudflare.com/ajax/libs/markdown-it/12.0.4/markdown-it.min.js"),
-                                        getScript("_markdown-it-mark.js","https://cdn.jsdelivr.net/gh/Jwrede/Anki-KaTeX-Markdown/_markdown-it-mark.js")
+					getKatexCSS("__ADDON_WEB_PATH__/_katex.css"),
+					getCSS("__ADDON_WEB_PATH__/_highlight.css"),
+					getScript("__ADDON_WEB_PATH__/_highlight.js"),
+					getScript("__ADDON_WEB_PATH__/_katex.min.js"),
+					getScript("__ADDON_WEB_PATH__/_auto-render.js"),
+					getScript("__ADDON_WEB_PATH__/_markdown-it.min.js"),
+                                        getScript("__ADDON_WEB_PATH__/_markdown-it-mark.js")
 					
 				];
 
@@ -59,43 +56,112 @@ HTMLforEditor = """
 									document.addEventListener('keyup', window.markdownPreviewKeyupFunc);
 				}
 
-                                Promise.all(getResources).then(() => getScript("_mhchem.js", "https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/contrib/mhchem.min.js")).then(main);
+
+                                Promise.all(getResources).then(() => getScript("__ADDON_WEB_PATH__/_mhchem.js")).then(main).catch(showFallbackPreview);
 				
 
-				function getScript(path, altURL) {
+				function getScript(path) {
 					return new Promise((resolve, reject) => {
 						let script = document.createElement("script");
 						script.onload = resolve;
-						script.onerror = function() {
-							let script_online = document.createElement("script");
-							script_online.onload = resolve;
-							script_online.onerror = reject;
-							script_online.src = altURL;
-							document.head.appendChild(script_online);
-						}
+						script.onerror = reject;
 						script.src = path;
 						document.head.appendChild(script);
 					})
 				}
 
-				function getCSS(path, altURL) {
+				function getCSS(path) {
 					return new Promise((resolve, reject) => {
 						var css = document.createElement('link');
 						css.setAttribute('rel', 'stylesheet');
 						css.type = 'text/css';
 						css.onload = resolve;
-						css.onerror = function() {
-							var css_online = document.createElement('link');
-							css_online.setAttribute('rel', 'stylesheet');
-							css_online.type = 'text/css';
-							css_online.onload = resolve;
-							css_online.onerror = reject;
-							css_online.href = altURL;
-							document.head.appendChild(css_online);
-						}
+						css.onerror = reject;
 						css.href = path;
 						document.head.appendChild(css);
 					});
+				}
+
+				function getKatexCSS(path) {
+					return fetch(path).then(function(response) {
+						if (!response.ok) {
+							throw new Error('Failed to load KaTeX CSS');
+						}
+						return response.text();
+					}).then(function(cssText) {
+						var style = document.createElement('style');
+						style.type = 'text/css';
+						style.textContent = cssText.replace(/url\\(_/g, 'url(__ADDON_WEB_PATH__/fonts/_');
+						document.head.appendChild(style);
+					});
+				}
+
+				function showFallbackPreview() {
+					area.textContent = replaceInString(collectFieldText());
+					show();
+				}
+
+				function collectFieldText() {
+					if (!fields || !fields.children) {
+						return '';
+					}
+
+					var parts = [];
+					for (var i = 0; i < fields.children.length; i++) {
+						var html = getFieldHTML(fields.children[i]);
+						if (html) {
+							var fieldName = markdownPreviewFieldNames[i] || ('Field ' + (i + 1));
+							parts.push('# ' + fieldName + '\\n' + html);
+						}
+					}
+					return parts.join('\\n');
+				}
+
+				function getFieldHTML(field) {
+					if (!field) {
+						return '';
+					}
+
+					var editables = field.getElementsByClassName('rich-text-editable');
+					for (var i = 0; i < editables.length; i++) {
+						var html = getShadowHTML(editables[i]);
+						if (html) {
+							return html;
+						}
+					}
+
+					if (field.children && field.children.length > 1) {
+						var html = getShadowHTML(field.children[1]);
+						if (html) {
+							return html;
+						}
+					}
+
+					return getShadowHTML(field);
+				}
+
+				function getShadowHTML(element) {
+					if (!element || !element.shadowRoot) {
+						return '';
+					}
+
+					var editable = element.shadowRoot.querySelector('[contenteditable="true"]');
+					if (editable) {
+						return editable.innerHTML;
+					}
+
+					var children = element.shadowRoot.children;
+					if (children.length > 2 && children[2].innerHTML !== undefined) {
+						return children[2].innerHTML;
+					}
+
+					for (var i = 0; i < children.length; i++) {
+						if (children[i].innerHTML !== undefined) {
+							return children[i].innerHTML;
+						}
+					}
+
+					return '';
 				}
 
 				function render(text) {

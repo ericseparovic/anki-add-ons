@@ -16,6 +16,49 @@ El proyecto es un add-on de Anki que agrega soporte para Markdown, KaTeX, bloque
 
 La idea base es buena y util, pero la implementacion actual es fragil. Muchos errores reportados por usuarios siguen presentes en esta copia, especialmente los relacionados con el simbolo `$`, modo oscuro, estilos Cloze, vista previa y limpieza de HTML pegado.
 
+## Estado actualizado
+
+Actualizado despues de las correcciones realizadas en la rama de desarrollo `main`.
+
+El analisis historico de este documento conserva referencias y estados originales para entender la deuda tecnica inicial. La fuente de verdad para el estado actual es esta seccion y el roadmap actualizado al final.
+
+### Ya corregido
+
+- Se creo una instalacion de desarrollo separada mediante symlink `markdownkatexdev`, sin modificar el add-on original instalado.
+- Se desactivo `$...$` como delimitador KaTeX por defecto.
+- Se mantienen como delimitadores validos `$$...$$`, `\(...\)` y `\[...\]`.
+- El render ahora ejecuta Markdown antes que KaTeX.
+- KaTeX ignora `script`, `noscript`, `style`, `textarea`, `pre` y `code`.
+- Se preserva `span.cloze` para no romper estilos Cloze.
+- Se agrego modo oscuro real con tema Catppuccin Latte/Mocha.
+- Se aplico estilo Catppuccin a tarjetas, preview del editor y Highlight.js.
+- Se corrigio el bug de `replace` sin asignacion.
+- Se extrajeron helpers JS comunes para reducir duplicacion en las plantillas.
+- Se mitigaron listeners duplicados en la preview del editor.
+- Se migraron hooks legacy `addHook` a `aqt.gui_hooks`.
+- Se corrigieron APIs deprecadas de Anki moderno: `byName` -> `by_name` y `note.model()` -> `note.note_type()`.
+- Se actualizo `meta.json` para Anki moderno.
+- Se corrigieron errores CSP de Anki 26.05 en la preview cargando recursos desde `/_addons/...`.
+- Se corrigieron rutas de fuentes KaTeX en la preview para cargarlas desde `/_addons/<addon>/fonts/...`.
+- La preview del editor soporta mas de dos campos y muestra nombres reales de campos (`Front`, `Back`, `Text`, `Back Extra`).
+- Se agrego `TESTING.md` con checklist manual.
+
+### Pendiente
+
+- Actualizar este documento por completo si se desea eliminar referencias historicas obsoletas.
+- Crear `README.md` con instalacion, uso y desarrollo.
+- Crear `ROADMAP.md` o mantener este archivo como roadmap vivo.
+- Decidir si se renombra el tipo de nota de desarrollo a `KaTeX and Markdown Improved` para evitar confusion con versiones previas.
+- Decidir politica de `html:true`: mantener, hacer configurable o desactivar.
+- Eliminar o hacer configurable el fallback CDN en las tarjetas finales.
+- Versionar o reemplazar correctamente los recursos copiados al media folder.
+- Revisar `_add_file()`, porque actualmente no reemplaza archivos si ya existen.
+- Evaluar si `editor.web.eval` debe reemplazarse por una integracion mas moderna.
+- Refactorizar mas profundamente `HTMLandCSS.py`, que sigue concentrando HTML, CSS y JS en strings grandes.
+- Mejorar la limpieza de HTML pegado; sigue basada en regex y puede tener efectos secundarios.
+- Actualizar dependencias externas con pruebas: KaTeX, markdown-it, Highlight.js y mhchem.
+- Agregar tests automatizados.
+
 ## Estructura del proyecto
 
 Archivos propios principales:
@@ -639,91 +682,49 @@ El add-on es funcional, pero esta muy acoplado:
 
 La mayor deuda tecnica esta en `HTMLandCSS.py`.
 
-## Prioridades para una nueva version
+## Prioridades actuales
 
-### Prioridad 1: corregir `$`
+### Prioridad 1: documentacion y cierre de fase
 
-Opciones:
+- Actualizar `TESTING.md` para reemplazar referencias a `Field 1` y `Field 2` por nombres reales de campos.
+- Crear `README.md` con instalacion, uso, tipos de nota, delimitadores soportados y advertencias.
+- Documentar instalacion de desarrollo con symlink `markdownkatexdev`.
+- Documentar decisiones de compatibilidad: `$...$` desactivado, recursos locales, soporte Anki 2.1.20+.
 
-- Desactivar `$...$` por defecto.
-- Usar solo `$$...$$`, `\(...\)` y `\[...\]` por defecto.
-- Hacer `$...$` configurable.
-- Permitir `$...$` solo si no esta pegado a letras o numeros.
-- Ignorar `$` dentro de codigo inline y bloques de codigo.
+### Prioridad 2: recursos locales y media folder
 
-Recomendacion:
+- Eliminar fallback CDN tambien en las tarjetas finales o hacerlo configurable.
+- Revisar `_add_file()` para que pueda actualizar recursos ya existentes en el media folder.
+- Evitar borrados amplios con `shutil.rmtree()` salvo que haya una razon concreta.
+- Definir estrategia de versionado de assets copiados a media.
 
-- Por defecto usar `$$...$$`, `\(...\)` y `\[...\]`.
-- Agregar opcion para activar `$...$` en modo compatibilidad Obsidian.
+### Prioridad 3: seguridad y configuracion
 
-### Prioridad 2: cambiar orden de renderizado
+- Decidir politica de `html:true` en markdown-it.
+- Evaluar si `html:true` debe quedar activo, ser configurable o apagarse por defecto.
+- Definir si se agrega configuracion para reactivar `$...$` en modo compatibilidad.
 
-Renderizar primero Markdown y despues KaTeX sobre el DOM resultante, respetando `ignoredTags: ["pre", "code"]`.
+### Prioridad 4: refactor de `HTMLandCSS.py`
 
-Esto evita que `$HOME` dentro de codigo se procese como formula.
+- Separar HTML, CSS y JS propios en archivos mas faciles de mantener.
+- Reducir strings gigantes embebidos en Python.
+- Consolidar mas la logica comun de renderizado.
+- Mantener compatibilidad con Basic, Cloze y preview del editor.
 
-### Prioridad 3: preservar Cloze
+### Prioridad 5: integracion moderna con Anki
 
-No eliminar `span.cloze`.
+- Evaluar reemplazo de `editor.web.eval` por una integracion mas estable si Anki ofrece un flujo apropiado para el editor.
+- Mantener recursos del editor servidos desde `/_addons/...` para cumplir CSP.
+- Seguir probando en Anki 26.05 y versiones modernas.
 
-La limpieza debe distinguir entre:
+### Prioridad 6: dependencias
 
-- `span` basura de copy/paste.
-- `span.cloze` generado por Anki.
-- `span` generado por KaTeX.
+- Actualizar KaTeX con pruebas de formulas y fuentes.
+- Actualizar markdown-it con pruebas de Markdown, tablas y HTML.
+- Actualizar Highlight.js con pruebas de Bash, Java, C, C++, Python y otros lenguajes usados.
+- Confirmar version compatible de mhchem con la version de KaTeX elegida.
 
-### Prioridad 4: agregar dark mode real
-
-CSS minimo necesario:
-
-- `.nightMode .card`
-- `.nightMode code`
-- `.nightMode pre code`
-- `.nightMode table`
-- `.nightMode .hljs`
-- `.nightMode .cloze`
-- `mark`
-- `blockquote`
-
-### Prioridad 5: separar codigo repetido
-
-Extraer logica comun de renderizado.
-
-Objetivo:
-
-- Una unica funcion de carga de recursos.
-- Una unica funcion de render Markdown.
-- Una unica funcion de render KaTeX.
-- Una unica funcion de limpieza.
-- Plantillas Basic/Cloze mas pequenas.
-
-### Prioridad 6: modernizar compatibilidad con Anki
-
-Migrar:
-
-- `anki.hooks.addHook` a `aqt.gui_hooks`.
-- `editor.web.eval` a una integracion mas estable si es posible.
-- Acceso fragil a campos del editor por una API o selector mas robusto.
-
-### Prioridad 7: recursos locales por defecto
-
-Eliminar fallback remoto o hacerlo configurable.
-
-Recomendacion:
-
-- Modo default: solo recursos locales.
-- Modo opcional: fallback remoto, desactivado por defecto.
-
-### Prioridad 8: actualizar dependencias
-
-Actualizar con pruebas:
-
-- KaTeX.
-- markdown-it.
-- highlight.js.
-- mhchem compatible con la version de KaTeX elegida.
-
-### Prioridad 9: agregar pruebas
+### Prioridad 7: pruebas automatizadas
 
 Casos minimos:
 
@@ -735,56 +736,73 @@ Bloques bash con $HOME no deben renderizar KaTeX
 {{c1::texto}} debe conservar .cloze
 ==texto== debe renderizar mark
 Dark mode debe mantener contraste legible
+Preview no debe disparar errores CSP
+Recursos KaTeX deben cargar fuentes desde la ruta correcta
 ```
 
-### Prioridad 10: documentacion
+## Plan recomendado de implementacion actualizado
 
-Crear:
+### Fase 1: base de desarrollo
 
-- `README.md`
-- Guia de instalacion de desarrollo.
-- Guia de pruebas manuales.
-- Changelog.
-- Lista de decisiones de compatibilidad.
+Estado: completada parcialmente.
 
-## Plan recomendado de implementacion
+- Instalacion de desarrollo separada: completado.
+- Add-on original fuera de alcance: completado.
+- `TESTING.md`: completado.
+- `README.md`: pendiente.
+- `ROADMAP.md` o plan vivo actualizado: en progreso.
+- Renombrar modelos a `KaTeX and Markdown Improved`: pendiente de decision.
 
-### Fase 1: preparacion
+### Fase 2: bugs criticos de render
 
-1. Crear `README.md`.
-2. Crear `ROADMAP.md` o mantener este archivo como documento vivo.
-3. Cambiar nombre del modelo de desarrollo para no pisar el original, por ejemplo `KaTeX and Markdown Improved`.
-4. Definir estrategia de instalacion como add-on separado.
+Estado: completada.
 
-### Fase 2: bugs criticos
+- Corregir `$`: completado.
+- Cambiar orden a Markdown primero y KaTeX despues: completado.
+- Evitar render KaTeX dentro de `pre` y `code`: completado.
+- Agregar CSS dark mode: completado.
+- Preservar `span.cloze`: completado.
 
-1. Corregir `$`.
-2. Cambiar orden a Markdown primero, KaTeX despues.
-3. Evitar render KaTeX dentro de `pre` y `code`.
-4. Agregar CSS dark mode.
-5. Preservar `span.cloze`.
+### Fase 3: mantenimiento inicial
 
-### Fase 3: mantenimiento
+Estado: completada parcialmente.
 
-1. Reducir duplicacion en `HTMLandCSS.py`.
-2. Extraer JS comun.
-3. Corregir `replace` sin asignacion.
-4. Eliminar variables globales implicitas.
-5. Evitar listeners duplicados.
+- Reducir duplicacion en `HTMLandCSS.py`: completado parcialmente.
+- Extraer JS comun: completado parcialmente.
+- Corregir `replace` sin asignacion: completado.
+- Eliminar variables globales implicitas principales: completado.
+- Evitar listeners duplicados: completado.
+- Refactor profundo de `HTMLandCSS.py`: pendiente.
 
 ### Fase 4: compatibilidad moderna
 
-1. Migrar hooks a `aqt.gui_hooks`.
-2. Revisar integracion con editor moderno.
-3. Hacer preview dinamica para mas de dos campos.
-4. Actualizar `meta.json`.
+Estado: completada parcialmente.
+
+- Migrar hooks a `aqt.gui_hooks`: completado.
+- Actualizar `meta.json`: completado.
+- Corregir APIs deprecadas `byName` y `note.model()`: completado.
+- Corregir CSP de preview en Anki 26.05: completado.
+- Corregir rutas de fuentes KaTeX en preview: completado.
+- Preview dinamica para mas de dos campos: completado.
+- Evaluar reemplazo de `editor.web.eval`: pendiente.
 
 ### Fase 5: dependencias y seguridad
 
-1. Actualizar librerias.
-2. Decidir si `html:true` queda activo, configurable o desactivado.
-3. Eliminar fallback CDN por defecto.
-4. Versionar recursos copiados al media folder.
+Estado: pendiente.
+
+- Actualizar librerias: pendiente.
+- Decidir politica de `html:true`: pendiente.
+- Eliminar o hacer configurable fallback CDN en tarjetas finales: pendiente.
+- Versionar recursos copiados al media folder: pendiente.
+
+### Fase 6: documentacion y publicacion
+
+Estado: pendiente.
+
+- Crear `README.md`: pendiente.
+- Crear changelog: pendiente.
+- Documentar pruebas manuales finales: parcialmente completado en `TESTING.md`.
+- Preparar commit/release cuando el usuario lo solicite: pendiente.
 
 ## Propuesta de nueva version
 
@@ -802,8 +820,8 @@ Objetivos principales:
 - Ser compatible con Anki moderno.
 - Tener estructura mantenible.
 
-## Conclusion
+## Conclusion actualizada
 
-La copia actual conserva la mayoria de los errores reportados por usuarios. La funcionalidad base es valiosa, pero para una version mejorada conviene atacar primero `$`, Cloze, dark mode y orden de renderizado.
+La copia de desarrollo ya resolvio los problemas criticos iniciales de `$`, orden de renderizado, Cloze, modo oscuro y compatibilidad basica con Anki 26.05.
 
-Despues de esos arreglos, el siguiente paso natural es refactorizar `HTMLandCSS.py` para reducir duplicacion y modernizar la integracion con Anki.
+El siguiente paso natural es cerrar documentacion y pruebas manuales, despues avanzar con seguridad, recursos locales, actualizacion de dependencias y un refactor profundo de `HTMLandCSS.py`.

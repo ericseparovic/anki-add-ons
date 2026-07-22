@@ -24,6 +24,23 @@ KaTeX and Markdown Basic
 KaTeX and Markdown Cloze
 ```
 
+## Compatibility Smoke Test
+
+1. Start Anki from the terminal.
+2. Open `Tools` -> `Add-ons`.
+3. Confirm `Markdown and KaTeX Support` is enabled.
+4. Open `Add` and select `KaTeX and Markdown Basic`.
+5. Switch to `KaTeX and Markdown Cloze`.
+
+Expected result:
+
+- Anki starts without Python errors in the terminal.
+- Both note types are available.
+- Opening the editor does not show add-on errors.
+- The add-on remains enabled on Anki 26.05 or newer compatible builds.
+- The terminal does not show `byName is deprecated` or `model is deprecated` from this add-on.
+- The terminal does not show Content Security Policy errors for `_highlight.js`, `_katex.min.js`, `_auto-render.js`, `_markdown-it.min.js`, `_markdown-it-mark.js`, or `_mhchem.js`.
+
 ## Basic Card Regression Test
 
 Paste this into `Front` of a `KaTeX and Markdown Basic` note:
@@ -172,6 +189,22 @@ Expected result:
 - The editor does not become progressively slower.
 - No repeated rendering or flickering is visible.
 - No JavaScript errors appear in the terminal.
+
+## Editor Preview Field Test
+
+1. Open a `KaTeX and Markdown Basic` note.
+2. Type Markdown and math in `Front`.
+3. Type different Markdown and math in `Back`.
+4. Confirm the preview shows both fields with `Front` and `Back` headings.
+5. Open a `KaTeX and Markdown Cloze` note.
+6. Type content in `Text` and `Back Extra`.
+
+Expected result:
+
+- Preview renders content from all visible fields.
+- Basic and Cloze editor previews both work.
+- Missing or empty fields do not break the editor.
+- No JavaScript CSP errors appear in the terminal.
 
 ## Theme Test
 
