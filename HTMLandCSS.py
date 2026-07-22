@@ -1,6 +1,11 @@
 """ This file contains all the HTML / CSS strings for the different card types """
 
 HTMLforEditor = """
+        if (window.markdownPreviewKeyupFunc) {
+            document.removeEventListener('keyup', window.markdownPreviewKeyupFunc);
+            window.markdownPreviewKeyupFunc = null;
+        }
+
         var area = document.getElementById('markdown-area');
         if(area) area.remove();
         area = document.createElement('markdown-area');
@@ -13,6 +18,7 @@ HTMLforEditor = """
         area.style.height = '100%';
 
         var fields = document.getElementById('fields');
+        var keyupFunc;
         if (fields !== null) {
 			keyupFunc = function() {
 				var text = '# Field 1\\n' + fields.children[0].children[1].shadowRoot.children[2].innerHTML;
@@ -24,7 +30,7 @@ HTMLforEditor = """
 		}
         
         else {
-			var fields = document.getElementsByClassName('fields')[0];
+			fields = document.getElementsByClassName('fields')[0];
         
 			keyupFunc = function() {
 				var text = '# Field 1\\n' + fields.children[0].getElementsByClassName("rich-text-editable")[0].shadowRoot.children[2].innerHTML;
@@ -47,9 +53,10 @@ HTMLforEditor = """
 					
 				];
 
-				main = function() {
+				var main = function() {
 									keyupFunc();
-									document.addEventListener('keyup', keyupFunc);
+									window.markdownPreviewKeyupFunc = keyupFunc;
+									document.addEventListener('keyup', window.markdownPreviewKeyupFunc);
 				}
 
                                 Promise.all(getResources).then(() => getScript("_mhchem.js", "https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/contrib/mhchem.min.js")).then(main);
@@ -128,7 +135,7 @@ HTMLforEditor = """
 					text = protectMathDelimiters(text);
 					text = md.render(text);
 					text = restoreMathDelimiters(text);
-					area.innerHTML = text.replace(/&lt;\/span&gt;/gi,"\\\\");
+					area.innerHTML = text.replace(/&lt;\\/span&gt;/gi,"\\\\");
 				}
 				function protectMathDelimiters(str) {
 					return str.split("\\\\(").join("ANKI_KATEX_INLINE_OPEN")
@@ -143,12 +150,12 @@ HTMLforEditor = """
 						.split("ANKI_KATEX_DISPLAY_CLOSE").join("\\\\]");
 				}
 				function replaceInString(str) {
-					str = str.replace(/<[\/]?pre[^>]*>/gi, "");
-					str = str.replace(/<br\s*[\/]?[^>]*>/gi, "\\n");
+					str = str.replace(/<[/]?pre[^>]*>/gi, "");
+					str = str.replace(/<br\\s*[/]?[^>]*>/gi, "\\n");
 					str = str.replace(/<div[^>]*>/gi, "\\n");
 					// Thanks Graham A!
-					str = str.replace(/<span(?![^>]*class=["'][^"']*\\bcloze\\b[^"']*["'])[^>]*>(.*?)<\/span>/gi, "$1")
-					str.replace(/<\/div[^>]*>/g, "\\n");
+					str = str.replace(/<span(?![^>]*class=["'][^"']*\\bcloze\\b[^"']*["'])[^>]*>(.*?)<\\/span>/gi, "$1")
+					str = str.replace(/<\\/div[^>]*>/g, "\\n");
 					return replaceHTMLElementsInString(str);
 				}
 
@@ -161,23 +168,7 @@ HTMLforEditor = """
 				}
         """
 
-front = """
-
-<div id="front"><pre>{{Front}}</pre></div>
-
-<script>
-	var getResources = [
-		getCSS("_katex.css", "https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css"),
-		getCSS("_highlight.css", "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.0.1/styles/default.min.css"),
-		getScript("_highlight.js", "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.0.1/highlight.min.js"),
-		getScript("_katex.min.js", "https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.js"),
-		getScript("_auto-render.js", "https://cdn.jsdelivr.net/gh/Jwrede/Anki-KaTeX-Markdown/auto-render-cdn.js"),
-		getScript("_markdown-it.min.js", "https://cdnjs.cloudflare.com/ajax/libs/markdown-it/12.0.4/markdown-it.min.js"),
-                getScript("_markdown-it-mark.js","https://cdn.jsdelivr.net/gh/Jwrede/Anki-KaTeX-Markdown/_markdown-it-mark.js")
-	];
-        Promise.all(getResources).then(() => getScript("_mhchem.js", "https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/contrib/mhchem.min.js")).then(render).catch(show);
-	
-
+CARD_RENDER_HELPERS = """
 	function getScript(path, altURL) {
 		return new Promise((resolve, reject) => {
 			let script = document.createElement("script");
@@ -205,24 +196,13 @@ front = """
 				css_online.setAttribute('rel', 'stylesheet');
 				css_online.type = 'text/css';
 				css_online.onload = resolve;
-				css.onerror = reject;
+				css_online.onerror = reject;
 				css_online.href = altURL;
 				document.head.appendChild(css_online);
 			}
 			css.href = path;
 			document.head.appendChild(css);
 		});
-	}
-
-
-	function render() {
-		markdown("front");
-		renderMath("front");
-		show();
-	}
-
-	function show() {
-		document.getElementById("front").style.visibility = "visible";
 	}
 
 	function renderMath(ID) {
@@ -251,27 +231,30 @@ front = """
 		text = protectMathDelimiters(text);
 		text = md.render(text);
 		text = restoreMathDelimiters(text);
-		document.getElementById(ID).innerHTML = text.replace(/&lt;\/span&gt;/gi,"\\\\");
+		document.getElementById(ID).innerHTML = text.replace(/&lt;\\/span&gt;/gi,"\\\\");
 	}
+
 	function protectMathDelimiters(str) {
 		return str.split("\\\\(").join("ANKI_KATEX_INLINE_OPEN")
 			.split("\\\\)").join("ANKI_KATEX_INLINE_CLOSE")
 			.split("\\\\[").join("ANKI_KATEX_DISPLAY_OPEN")
 			.split("\\\\]").join("ANKI_KATEX_DISPLAY_CLOSE");
 	}
+
 	function restoreMathDelimiters(str) {
 		return str.split("ANKI_KATEX_INLINE_OPEN").join("\\\\(")
 			.split("ANKI_KATEX_INLINE_CLOSE").join("\\\\)")
 			.split("ANKI_KATEX_DISPLAY_OPEN").join("\\\\[")
 			.split("ANKI_KATEX_DISPLAY_CLOSE").join("\\\\]");
 	}
+
 	function replaceInString(str) {
-		str = str.replace(/<[\/]?pre[^>]*>/gi, "");
-		str = str.replace(/<br\s*[\/]?[^>]*>/gi, "\\n");
+		str = str.replace(/<[/]?pre[^>]*>/gi, "");
+		str = str.replace(/<br\\s*[/]?[^>]*>/gi, "\\n");
 		str = str.replace(/<div[^>]*>/gi, "\\n");
 		// Thanks Graham A!
-		str = str.replace(/<span(?![^>]*class=["'][^"']*\\bcloze\\b[^"']*["'])[^>]*>(.*?)<\/span>/gi, "$1")
-		str.replace(/<\/div[^>]*>/g, "\\n");
+		str = str.replace(/<span(?![^>]*class=["'][^"']*\\bcloze\\b[^"']*["'])[^>]*>(.*?)<\\/span>/gi, "$1")
+		str = str.replace(/<\\/div[^>]*>/g, "\\n");
 		return replaceHTMLElementsInString(str);
 	}
 
@@ -282,6 +265,37 @@ front = """
 		str = str.replace(/&lt;/gi, "<");
 		return str.replace(/&amp;/gi, "&");
 	}
+"""
+
+front = """
+
+<div id="front"><pre>{{Front}}</pre></div>
+
+<script>
+	var getResources = [
+		getCSS("_katex.css", "https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css"),
+		getCSS("_highlight.css", "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.0.1/styles/default.min.css"),
+		getScript("_highlight.js", "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.0.1/highlight.min.js"),
+		getScript("_katex.min.js", "https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.js"),
+		getScript("_auto-render.js", "https://cdn.jsdelivr.net/gh/Jwrede/Anki-KaTeX-Markdown/auto-render-cdn.js"),
+		getScript("_markdown-it.min.js", "https://cdnjs.cloudflare.com/ajax/libs/markdown-it/12.0.4/markdown-it.min.js"),
+                getScript("_markdown-it-mark.js","https://cdn.jsdelivr.net/gh/Jwrede/Anki-KaTeX-Markdown/_markdown-it-mark.js")
+	];
+        Promise.all(getResources).then(() => getScript("_mhchem.js", "https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/contrib/mhchem.min.js")).then(render).catch(show);
+
+""" + CARD_RENDER_HELPERS + """
+
+
+	function render() {
+		markdown("front");
+		renderMath("front");
+		show();
+	}
+
+	function show() {
+		document.getElementById("front").style.visibility = "visible";
+	}
+
 </script>
 """
 
@@ -305,42 +319,7 @@ back = """
 	];
         Promise.all(getResources).then(() => getScript("_mhchem.js", "https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/contrib/mhchem.min.js")).then(render).catch(show);
 	
-
-	function getScript(path, altURL) {
-		return new Promise((resolve, reject) => {
-			let script = document.createElement("script");
-			script.onload = resolve;
-			script.onerror = function() {
-				let script_online = document.createElement("script");
-				script_online.onload = resolve;
-				script_online.onerror = reject;
-				script_online.src = altURL;
-				document.head.appendChild(script_online);
-			}
-			script.src = path;
-			document.head.appendChild(script);
-		})
-	}
-
-	function getCSS(path, altURL) {
-		return new Promise((resolve, reject) => {
-			var css = document.createElement('link');
-			css.setAttribute('rel', 'stylesheet');
-			css.type = 'text/css';
-			css.onload = resolve;
-			css.onerror = function() {
-				var css_online = document.createElement('link');
-				css_online.setAttribute('rel', 'stylesheet');
-				css_online.type = 'text/css';
-				css_online.onload = resolve;
-				css_online.onerror = reject;
-				css_online.href = altURL;
-				document.head.appendChild(css_online);
-			}
-			css.href = path;
-			document.head.appendChild(css);
-		});
-	}
+""" + CARD_RENDER_HELPERS + """
 
 	function render() {
 		markdown("front");
@@ -353,64 +332,6 @@ back = """
 	function show() {
 		document.getElementById("front").style.visibility = "visible";
 		document.getElementById("back").style.visibility = "visible";
-	}
-
-
-	function renderMath(ID) {
-		renderMathInElement(document.getElementById(ID), {
-			delimiters:  [
-  				{left: "$$", right: "$$", display: true},
-				{left: "\\\\(", right: "\\\\)", display: false},
-				{left: "\\\\[", right: "\\\\]", display: true}
-			],
-                        ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code"],
-                        throwOnError : false
-		});
-	}
-	function markdown(ID) {
-		let md = new markdownit({typographer: true, html:true, highlight: function (str, lang) {
-                            if (lang && hljs.getLanguage(lang)) {
-                                try {
-                                    return hljs.highlight(str, { language: lang }).value;
-                                } catch (__) {}
-                            }
-
-                            return ''; // use external default escaping
-                        }}).use(markdownItMark);
-		let text = replaceInString(document.getElementById(ID).innerHTML);
-		text = protectMathDelimiters(text);
-		text = md.render(text);
-		text = restoreMathDelimiters(text);
-		document.getElementById(ID).innerHTML = text.replace(/&lt;\/span&gt;/gi,"\\\\");
-	}
-	function protectMathDelimiters(str) {
-		return str.split("\\\\(").join("ANKI_KATEX_INLINE_OPEN")
-			.split("\\\\)").join("ANKI_KATEX_INLINE_CLOSE")
-			.split("\\\\[").join("ANKI_KATEX_DISPLAY_OPEN")
-			.split("\\\\]").join("ANKI_KATEX_DISPLAY_CLOSE");
-	}
-	function restoreMathDelimiters(str) {
-		return str.split("ANKI_KATEX_INLINE_OPEN").join("\\\\(")
-			.split("ANKI_KATEX_INLINE_CLOSE").join("\\\\)")
-			.split("ANKI_KATEX_DISPLAY_OPEN").join("\\\\[")
-			.split("ANKI_KATEX_DISPLAY_CLOSE").join("\\\\]");
-	}
-	function replaceInString(str) {
-		str = str.replace(/<[\/]?pre[^>]*>/gi, "");
-		str = str.replace(/<br\s*[\/]?[^>]*>/gi, "\\n");
-		str = str.replace(/<div[^>]*>/gi, "\\n");
-		// Thanks Graham A!
-		str = str.replace(/<span(?![^>]*class=["'][^"']*\\bcloze\\b[^"']*["'])[^>]*>(.*?)<\/span>/gi, "$1")
-		str.replace(/<\/div[^>]*>/g, "\\n");
-		return replaceHTMLElementsInString(str);
-	}
-
-	function replaceHTMLElementsInString(str) {
-		str = str.replace(/&nbsp;/gi, " ");
-		str = str.replace(/&tab;/gi, "	");
-		str = str.replace(/&gt;/gi, ">");
-		str = str.replace(/&lt;/gi, "<");
-		return str.replace(/&amp;/gi, "&");
 	}
 </script>
 """
@@ -431,42 +352,8 @@ front_cloze = """
 	];
         Promise.all(getResources).then(() => getScript("_mhchem.js", "https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/contrib/mhchem.min.js")).then(render).catch(show);
 	
+""" + CARD_RENDER_HELPERS + """
 
-	function getScript(path, altURL) {
-		return new Promise((resolve, reject) => {
-			let script = document.createElement("script");
-			script.onload = resolve;
-			script.onerror = function() {
-				let script_online = document.createElement("script");
-				script_online.onload = resolve;
-				script_online.onerror = reject;
-				script_online.src = altURL;
-				document.head.appendChild(script_online);
-			}
-			script.src = path;
-			document.head.appendChild(script);
-		})
-	}
-
-	function getCSS(path, altURL) {
-		return new Promise((resolve, reject) => {
-			var css = document.createElement('link');
-			css.setAttribute('rel', 'stylesheet');
-			css.type = 'text/css';
-			css.onload = resolve;
-			css.onerror = function() {
-				var css_online = document.createElement('link');
-				css_online.setAttribute('rel', 'stylesheet');
-				css_online.type = 'text/css';
-				css_online.onload = resolve;
-				css_online.onerror = reject;
-				css_online.href = altURL;
-				document.head.appendChild(css_online);
-			}
-			css.href = path;
-			document.head.appendChild(css);
-		});
-	}
 	function render() {
 		markdown("front");
 		renderMath("front");
@@ -474,62 +361,6 @@ front_cloze = """
 	}
 	function show() {
 		document.getElementById("front").style.visibility = "visible";
-	}
-	function renderMath(ID) {
-		renderMathInElement(document.getElementById(ID), {
-			delimiters:  [
-  				{left: "$$", right: "$$", display: true},
-				{left: "\\\\(", right: "\\\\)", display: false},
-				{left: "\\\\[", right: "\\\\]", display: true}
-			],
-                        ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code"],
-                        throwOnError : false
-		});
-	}
-	function markdown(ID) {
-		let md = new markdownit({typographer: true, html:true, highlight: function (str, lang) {
-                            if (lang && hljs.getLanguage(lang)) {
-                                try {
-                                    return hljs.highlight(str, { language: lang }).value;
-                                } catch (__) {}
-                            }
-
-                            return ''; // use external default escaping
-                        }}).use(markdownItMark);
-		let text = replaceInString(document.getElementById(ID).innerHTML);
-		text = protectMathDelimiters(text);
-		text = md.render(text);
-		text = restoreMathDelimiters(text);
-		document.getElementById(ID).innerHTML = text.replace(/&lt;\/span&gt;/gi,"\\\\");
-	}
-	function protectMathDelimiters(str) {
-		return str.split("\\\\(").join("ANKI_KATEX_INLINE_OPEN")
-			.split("\\\\)").join("ANKI_KATEX_INLINE_CLOSE")
-			.split("\\\\[").join("ANKI_KATEX_DISPLAY_OPEN")
-			.split("\\\\]").join("ANKI_KATEX_DISPLAY_CLOSE");
-	}
-	function restoreMathDelimiters(str) {
-		return str.split("ANKI_KATEX_INLINE_OPEN").join("\\\\(")
-			.split("ANKI_KATEX_INLINE_CLOSE").join("\\\\)")
-			.split("ANKI_KATEX_DISPLAY_OPEN").join("\\\\[")
-			.split("ANKI_KATEX_DISPLAY_CLOSE").join("\\\\]");
-	}
-	function replaceInString(str) {
-		str = str.replace(/<[\/]?pre[^>]*>/gi, "");
-		str = str.replace(/<br\s*[\/]?[^>]*>/gi, "\\n");
-		str = str.replace(/<div[^>]*>/gi, "\\n");
-		// Thanks Graham A!
-		str = str.replace(/<span(?![^>]*class=["'][^"']*\\bcloze\\b[^"']*["'])[^>]*>(.*?)<\/span>/gi, "$1")
-		str.replace(/<\/div[^>]*>/g, "\\n");
-		return replaceHTMLElementsInString(str);
-	}
-
-	function replaceHTMLElementsInString(str) {
-		str = str.replace(/&nbsp;/gi, " ");
-		str = str.replace(/&tab;/gi, "	");
-		str = str.replace(/&gt;/gi, ">");
-		str = str.replace(/&lt;/gi, "<");
-		return str.replace(/&amp;/gi, "&");
 	}
 </script>
 """
@@ -551,43 +382,7 @@ back_cloze = """
 	];
         Promise.all(getResources).then(() => getScript("_mhchem.js", "https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/contrib/mhchem.min.js")).then(render).catch(show);
 	
-
-	function getScript(path, altURL) {
-		return new Promise((resolve, reject) => {
-			let script = document.createElement("script");
-			script.onload = resolve;
-			script.onerror = function() {
-				let script_online = document.createElement("script");
-				script_online.onload = resolve;
-				script_online.onerror = reject;
-				script_online.src = altURL;
-				document.head.appendChild(script_online);
-			}
-			script.src = path;
-			document.head.appendChild(script);
-		})
-	}
-
-	function getCSS(path, altURL) {
-		return new Promise((resolve, reject) => {
-			var css = document.createElement('link');
-			css.setAttribute('rel', 'stylesheet');
-			css.type = 'text/css';
-			css.onload = resolve;
-			css.onerror = function() {
-				var css_online = document.createElement('link');
-				css_online.setAttribute('rel', 'stylesheet');
-				css_online.type = 'text/css';
-				css_online.onload = resolve;
-				css_online.onerror = reject;
-				css_online.href = altURL;
-				document.head.appendChild(css_online);
-			}
-			css.href = path;
-			document.head.appendChild(css);
-		});
-	}
-
+""" + CARD_RENDER_HELPERS + """
 
 	function render() {
 		markdown("back");
@@ -600,63 +395,6 @@ back_cloze = """
 	function show() {
 		document.getElementById("back").style.visibility = "visible";
 		document.getElementById("extra").style.visibility = "visible";
-	}
-
-	function renderMath(ID) {
-		renderMathInElement(document.getElementById(ID), {
-			delimiters:  [
-  				{left: "$$", right: "$$", display: true},
-				{left: "\\\\(", right: "\\\\)", display: false},
-				{left: "\\\\[", right: "\\\\]", display: true}
-			],
-                        ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code"],
-                        throwOnError : false
-		});
-	}
-	function markdown(ID) {
-		let md = new markdownit({typographer: true, html:true, highlight: function (str, lang) {
-                            if (lang && hljs.getLanguage(lang)) {
-                                try {
-                                    return hljs.highlight(str, { language: lang }).value;
-                                } catch (__) {}
-                            }
-
-                            return ''; // use external default escaping
-                        }}).use(markdownItMark);
-		let text = replaceInString(document.getElementById(ID).innerHTML);
-		text = protectMathDelimiters(text);
-		text = md.render(text);
-		text = restoreMathDelimiters(text);
-		document.getElementById(ID).innerHTML = text.replace(/&lt;\/span&gt;/gi,"\\\\");
-	}
-	function protectMathDelimiters(str) {
-		return str.split("\\\\(").join("ANKI_KATEX_INLINE_OPEN")
-			.split("\\\\)").join("ANKI_KATEX_INLINE_CLOSE")
-			.split("\\\\[").join("ANKI_KATEX_DISPLAY_OPEN")
-			.split("\\\\]").join("ANKI_KATEX_DISPLAY_CLOSE");
-	}
-	function restoreMathDelimiters(str) {
-		return str.split("ANKI_KATEX_INLINE_OPEN").join("\\\\(")
-			.split("ANKI_KATEX_INLINE_CLOSE").join("\\\\)")
-			.split("ANKI_KATEX_DISPLAY_OPEN").join("\\\\[")
-			.split("ANKI_KATEX_DISPLAY_CLOSE").join("\\\\]");
-	}
-	function replaceInString(str) {
-		str = str.replace(/<[\/]?pre[^>]*>/gi, "");
-		str = str.replace(/<br\s*[\/]?[^>]*>/gi, "\\n");
-		str = str.replace(/<div[^>]*>/gi, "\\n");
-		// Thanks Graham A!
-		str = str.replace(/<span(?![^>]*class=["'][^"']*\\bcloze\\b[^"']*["'])[^>]*>(.*?)<\/span>/gi, "$1")
-		str.replace(/<\/div[^>]*>/g, "\\n");
-		return replaceHTMLElementsInString(str);
-	}
-
-	function replaceHTMLElementsInString(str) {
-		str = str.replace(/&nbsp;/gi, " ");
-		str = str.replace(/&tab;/gi, "	");
-		str = str.replace(/&gt;/gi, ">");
-		str = str.replace(/&lt;/gi, "<");
-		return str.replace(/&amp;/gi, "&");
 	}
 </script>
 
