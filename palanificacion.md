@@ -46,18 +46,21 @@ El analisis historico de este documento conserva referencias y estados originale
 ### Pendiente
 
 - Actualizar este documento por completo si se desea eliminar referencias historicas obsoletas.
-- Crear `README.md` con instalacion, uso y desarrollo.
-- Crear `ROADMAP.md` o mantener este archivo como roadmap vivo.
-- Decidir si se renombra el tipo de nota de desarrollo a `KaTeX and Markdown Improved` para evitar confusion con versiones previas.
 - Decidir politica de `html:true`: mantener, hacer configurable o desactivar.
-- Eliminar o hacer configurable el fallback CDN en las tarjetas finales.
-- Versionar o reemplazar correctamente los recursos copiados al media folder.
-- Revisar `_add_file()`, porque actualmente no reemplaza archivos si ya existen.
+- Verificar manualmente que las tarjetas finales cargan correctamente solo con recursos locales.
+- Definir si hace falta versionar recursos copiados al media folder.
 - Evaluar si `editor.web.eval` debe reemplazarse por una integracion mas moderna.
 - Refactorizar mas profundamente `HTMLandCSS.py`, que sigue concentrando HTML, CSS y JS en strings grandes.
 - Mejorar la limpieza de HTML pegado; sigue basada en regex y puede tener efectos secundarios.
 - Actualizar dependencias externas con pruebas: KaTeX, markdown-it, Highlight.js y mhchem.
 - Agregar tests automatizados.
+
+### Decisiones de Fase 1
+
+- `README.md` queda como documentacion principal para instalacion, uso y desarrollo.
+- `ROADMAP.md` queda como roadmap corto y actual; este archivo conserva el analisis historico extendido.
+- Los tipos de nota mantienen los nombres actuales por ahora: `KaTeX and Markdown Basic` y `KaTeX and Markdown Cloze`.
+- No se renombran a `KaTeX and Markdown Improved` todavia porque eso puede requerir una migracion de notas/modelos existentes.
 
 ## Estructura del proyecto
 
@@ -222,9 +225,9 @@ Referencias:
 
 ### Fallback a CDN
 
-Si falla la carga local de recursos, el add-on intenta cargar desde CDNs externos como `cdn.jsdelivr.net` y `cdnjs.cloudflare.com`.
+Estado actual: eliminado de las tarjetas finales. Si falla la carga local de recursos, la tarjeta se muestra sin intentar cargar CDNs externos.
 
-Esto mejora la probabilidad de carga, pero afecta privacidad, reproducibilidad y soporte offline real.
+Esto mejora privacidad, reproducibilidad y soporte offline real. La verificacion manual debe confirmar que todos los recursos locales se copian correctamente al media folder.
 
 ## Flujo de ejecucion
 
@@ -508,16 +511,16 @@ Versiones detectadas:
 
 - `markdown-it 12.0.4`
 - `highlight.js 11.0.1`
-- KaTeX enlazado a CDN `0.12.0`
-- mhchem enlazado a CDN `0.13.11`
+- KaTeX local basado en version `0.12.0`
+- mhchem local basado en version `0.13.11`
 
 Esto puede afectar compatibilidad, seguridad y soporte de nuevas funciones.
 
 ### 16. Fallback remoto contradice soporte offline real
 
-Estado: parcialmente corregido.
+Estado: corregido en tarjetas finales; pendiente verificar recursos locales copiados al media folder.
 
-Hay recursos locales, pero si fallan se intenta cargar desde CDN.
+Las tarjetas finales cargan recursos locales y ya no intentan cargar desde CDN si falla un recurso.
 
 Referencias:
 
@@ -529,27 +532,25 @@ Referencias:
 
 Problemas:
 
-- Menor privacidad.
-- Dependencia de internet.
-- Posible lentitud.
-- Fallos por red o politicas de seguridad.
+- Si falta un recurso local, la tarjeta se muestra sin render avanzado.
+- Queda verificar manualmente que los recursos reemplazados se cargan correctamente desde el media folder.
 
 ### 17. Actualizacion incompleta de recursos
 
-Estado: no corregido.
+Estado: corregido.
 
-`_add_file()` solo copia si el archivo no existe:
+`_add_file()` ahora compara el recurso empaquetado con la copia del media folder y reemplaza la copia si el contenido cambio:
 
 ```python
-if not os.path.isfile(os.path.join(mw.col.media.dir(), filename)):
-    mw.col.media.add_file(path)
+if os.path.isfile(target) and filecmp.cmp(path, target, shallow=False):
+    return
 ```
 
 Referencias:
 
 - `__init__.py:143-145`
 
-Si ya existe una version vieja del recurso en media, no se reemplaza.
+Si ya existe una version vieja del recurso en media, se reemplaza manteniendo el mismo nombre que usan las plantillas.
 
 ### 18. Borrado potencialmente peligroso
 
@@ -663,8 +664,8 @@ Antes de este archivo no habia `README.md`, guia de desarrollo ni instrucciones 
 | CSS no se guarda | Parcialmente corregido | Update de templates esta comentado |
 | Syntax highlighting falla en algunos lenguajes | Parcialmente no corregido | Highlight.js viejo/default |
 | Quimica falla a veces | No confirmado | mhchem existe, pero depende del orden de carga |
-| AnkiWeb funciona | Probablemente si | Plantillas usan HTML/JS y recursos en media/CDN |
-| Offline support | Parcial | Recursos locales + fallback remoto |
+| AnkiWeb funciona | Pendiente de verificar | Plantillas usan HTML/JS y recursos locales en media |
+| Offline support | Mejorado, pendiente de prueba manual | Recursos locales sin fallback remoto |
 | Falta de instrucciones | Parcialmente corregido | Este documento inicia la documentacion |
 | Compatibilidad con Anki moderno | Riesgosa | `addHook`, `editor.web.eval`, `max_point_version: 42` |
 
@@ -686,15 +687,17 @@ La mayor deuda tecnica esta en `HTMLandCSS.py`.
 
 ### Prioridad 1: documentacion y cierre de fase
 
-- Actualizar `TESTING.md` para reemplazar referencias a `Field 1` y `Field 2` por nombres reales de campos.
-- Crear `README.md` con instalacion, uso, tipos de nota, delimitadores soportados y advertencias.
-- Documentar instalacion de desarrollo con symlink `markdownkatexdev`.
-- Documentar decisiones de compatibilidad: `$...$` desactivado, recursos locales, soporte Anki 2.1.20+.
+- Estado: completada para Fase 1.
+- `README.md` documenta instalacion, uso, tipos de nota, delimitadores soportados y advertencias.
+- `ROADMAP.md` documenta fases, pendientes y recomendaciones.
+- `TESTING.md` documenta pruebas manuales.
+- La instalacion de desarrollo con symlink `markdownkatexdev` queda documentada.
+- Las decisiones de compatibilidad quedan documentadas: `$...$` desactivado, recursos locales para preview, soporte Anki 2.1.20+.
 
 ### Prioridad 2: recursos locales y media folder
 
-- Eliminar fallback CDN tambien en las tarjetas finales o hacerlo configurable.
-- Revisar `_add_file()` para que pueda actualizar recursos ya existentes en el media folder.
+- Fallback CDN eliminado en tarjetas finales; verificar manualmente el comportamiento offline.
+- `_add_file()` actualiza recursos ya existentes en el media folder cuando cambia el contenido.
 - Evitar borrados amplios con `shutil.rmtree()` salvo que haya una razon concreta.
 - Definir estrategia de versionado de assets copiados a media.
 
@@ -744,14 +747,14 @@ Recursos KaTeX deben cargar fuentes desde la ruta correcta
 
 ### Fase 1: base de desarrollo
 
-Estado: completada parcialmente.
+Estado: completada.
 
 - Instalacion de desarrollo separada: completado.
 - Add-on original fuera de alcance: completado.
 - `TESTING.md`: completado.
-- `README.md`: pendiente.
-- `ROADMAP.md` o plan vivo actualizado: en progreso.
-- Renombrar modelos a `KaTeX and Markdown Improved`: pendiente de decision.
+- `README.md`: completado.
+- `ROADMAP.md`: completado.
+- Renombrar modelos a `KaTeX and Markdown Improved`: decidido no hacerlo por ahora; queda como posible migracion futura.
 
 ### Fase 2: bugs criticos de render
 
@@ -788,18 +791,21 @@ Estado: completada parcialmente.
 
 ### Fase 5: dependencias y seguridad
 
-Estado: pendiente.
+Estado: completada parcialmente.
 
 - Actualizar librerias: pendiente.
 - Decidir politica de `html:true`: pendiente.
-- Eliminar o hacer configurable fallback CDN en tarjetas finales: pendiente.
-- Versionar recursos copiados al media folder: pendiente.
+- Eliminar o hacer configurable fallback CDN en tarjetas finales: completado; las tarjetas finales cargan recursos locales.
+- Reemplazar recursos obsoletos en media folder: completado.
+- Versionar recursos copiados al media folder: pendiente de decision.
+
+Recomendacion: seguir con evitar borrados amplios con `shutil.rmtree()` y despues definir la politica de `html:true`.
 
 ### Fase 6: documentacion y publicacion
 
 Estado: pendiente.
 
-- Crear `README.md`: pendiente.
+- Crear `README.md`: completado.
 - Crear changelog: pendiente.
 - Documentar pruebas manuales finales: parcialmente completado en `TESTING.md`.
 - Preparar commit/release cuando el usuario lo solicite: pendiente.

@@ -1,3 +1,4 @@
+import filecmp
 import json
 import os
 import shutil
@@ -324,8 +325,13 @@ def update():
 
 
 def _add_file(path, filename):
-    if not os.path.isfile(os.path.join(mw.col.media.dir(), filename)):
-        mw.col.media.add_file(path)
+    target = os.path.join(mw.col.media.dir(), filename)
+    if os.path.isfile(target) and filecmp.cmp(path, target, shallow=False):
+        return
+
+    tmp_target = target + ".tmp"
+    shutil.copyfile(path, tmp_target)
+    os.replace(tmp_target, target)
 
 
 gui_hooks.profile_did_open.append(create_model_if_necessary)

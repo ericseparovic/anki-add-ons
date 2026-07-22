@@ -235,37 +235,23 @@ HTMLforEditor = """
         """
 
 CARD_RENDER_HELPERS = """
-	function getScript(path, altURL) {
+	function getScript(path) {
 		return new Promise((resolve, reject) => {
 			let script = document.createElement("script");
 			script.onload = resolve;
-			script.onerror = function() {
-				let script_online = document.createElement("script");
-				script_online.onload = resolve;
-				script_online.onerror = reject;
-				script_online.src = altURL;
-				document.head.appendChild(script_online);
-			}
+			script.onerror = reject;
 			script.src = path;
 			document.head.appendChild(script);
 		})
 	}
 
-	function getCSS(path, altURL) {
+	function getCSS(path) {
 		return new Promise((resolve, reject) => {
 			var css = document.createElement('link');
 			css.setAttribute('rel', 'stylesheet');
 			css.type = 'text/css';
 			css.onload = resolve;
-			css.onerror = function() {
-				var css_online = document.createElement('link');
-				css_online.setAttribute('rel', 'stylesheet');
-				css_online.type = 'text/css';
-				css_online.onload = resolve;
-				css_online.onerror = reject;
-				css_online.href = altURL;
-				document.head.appendChild(css_online);
-			}
+			css.onerror = reject;
 			css.href = path;
 			document.head.appendChild(css);
 		});
@@ -339,15 +325,15 @@ front = """
 
 <script>
 	var getResources = [
-		getCSS("_katex.css", "https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css"),
-		getCSS("_highlight.css", "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.0.1/styles/default.min.css"),
-		getScript("_highlight.js", "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.0.1/highlight.min.js"),
-		getScript("_katex.min.js", "https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.js"),
-		getScript("_auto-render.js", "https://cdn.jsdelivr.net/gh/Jwrede/Anki-KaTeX-Markdown/auto-render-cdn.js"),
-		getScript("_markdown-it.min.js", "https://cdnjs.cloudflare.com/ajax/libs/markdown-it/12.0.4/markdown-it.min.js"),
-                getScript("_markdown-it-mark.js","https://cdn.jsdelivr.net/gh/Jwrede/Anki-KaTeX-Markdown/_markdown-it-mark.js")
+		getCSS("_katex.css"),
+		getCSS("_highlight.css"),
+		getScript("_highlight.js"),
+		getScript("_katex.min.js"),
+		getScript("_auto-render.js"),
+		getScript("_markdown-it.min.js"),
+				getScript("_markdown-it-mark.js")
 	];
-        Promise.all(getResources).then(() => getScript("_mhchem.js", "https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/contrib/mhchem.min.js")).then(render).catch(show);
+		Promise.all(getResources).then(() => getScript("_mhchem.js")).then(render).catch(show);
 
 """ + CARD_RENDER_HELPERS + """
 
@@ -375,15 +361,15 @@ back = """
 
 <script>
 	var getResources = [
-		getCSS("_katex.css", "https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css"),
-		getCSS("_highlight.css", "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.0.1/styles/default.min.css"),
-		getScript("_highlight.js", "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.0.1/highlight.min.js"),
-		getScript("_katex.min.js", "https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.js"),
-		getScript("_auto-render.js", "https://cdn.jsdelivr.net/gh/Jwrede/Anki-KaTeX-Markdown/auto-render-cdn.js"),
-		getScript("_markdown-it.min.js", "https://cdnjs.cloudflare.com/ajax/libs/markdown-it/12.0.4/markdown-it.min.js"),
-		getScript("_markdown-it-mark.js","https://cdn.jsdelivr.net/gh/Jwrede/Anki-KaTeX-Markdown/_markdown-it-mark.js")
+		getCSS("_katex.css"),
+		getCSS("_highlight.css"),
+		getScript("_highlight.js"),
+		getScript("_katex.min.js"),
+		getScript("_auto-render.js"),
+		getScript("_markdown-it.min.js"),
+		getScript("_markdown-it-mark.js")
 	];
-        Promise.all(getResources).then(() => getScript("_mhchem.js", "https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/contrib/mhchem.min.js")).then(render).catch(show);
+		Promise.all(getResources).then(() => getScript("_mhchem.js")).then(render).catch(show);
 	
 """ + CARD_RENDER_HELPERS + """
 
@@ -408,15 +394,15 @@ front_cloze = """
 
 <script>
 	var getResources = [
-		getCSS("_katex.css", "https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css"),
-		getCSS("_highlight.css", "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.0.1/styles/default.min.css"),
-		getScript("_highlight.js", "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.0.1/highlight.min.js"),
-		getScript("_katex.min.js", "https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.js"),
-		getScript("_auto-render.js", "https://cdn.jsdelivr.net/gh/Jwrede/Anki-KaTeX-Markdown/auto-render-cdn.js"),
-		getScript("_markdown-it.min.js", "https://cdnjs.cloudflare.com/ajax/libs/markdown-it/12.0.4/markdown-it.min.js"),
-		getScript("_markdown-it-mark.js","https://cdn.jsdelivr.net/gh/Jwrede/Anki-KaTeX-Markdown/_markdown-it-mark.js")
+		getCSS("_katex.css"),
+		getCSS("_highlight.css"),
+		getScript("_highlight.js"),
+		getScript("_katex.min.js"),
+		getScript("_auto-render.js"),
+		getScript("_markdown-it.min.js"),
+		getScript("_markdown-it-mark.js")
 	];
-        Promise.all(getResources).then(() => getScript("_mhchem.js", "https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/contrib/mhchem.min.js")).then(render).catch(show);
+		Promise.all(getResources).then(() => getScript("_mhchem.js")).then(render).catch(show);
 	
 """ + CARD_RENDER_HELPERS + """
 
@@ -438,15 +424,15 @@ back_cloze = """
 
 <script>
 	var getResources = [
-		getCSS("_katex.css", "https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css"),
-		getCSS("_highlight.css", "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.0.1/styles/default.min.css"),
-		getScript("_highlight.js", "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.0.1/highlight.min.js"),
-		getScript("_katex.min.js", "https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.js"),
-		getScript("_auto-render.js", "https://cdn.jsdelivr.net/gh/Jwrede/Anki-KaTeX-Markdown/auto-render-cdn.js"),
-		getScript("_markdown-it.min.js", "https://cdnjs.cloudflare.com/ajax/libs/markdown-it/12.0.4/markdown-it.min.js"),
-		getScript("_markdown-it-mark.js","https://cdn.jsdelivr.net/gh/Jwrede/Anki-KaTeX-Markdown/_markdown-it-mark.js")
+		getCSS("_katex.css"),
+		getCSS("_highlight.css"),
+		getScript("_highlight.js"),
+		getScript("_katex.min.js"),
+		getScript("_auto-render.js"),
+		getScript("_markdown-it.min.js"),
+		getScript("_markdown-it-mark.js")
 	];
-        Promise.all(getResources).then(() => getScript("_mhchem.js", "https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/contrib/mhchem.min.js")).then(render).catch(show);
+		Promise.all(getResources).then(() => getScript("_mhchem.js")).then(render).catch(show);
 	
 """ + CARD_RENDER_HELPERS + """
 
