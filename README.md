@@ -50,12 +50,18 @@ addons21/markdownkatexdev
 - Editor assets are exported through `/_addons/...` to comply with Anki's Content Security Policy.
 - The editor preview uses `aqt.gui_hooks` and modern note/model APIs.
 
+## Bundled Dependencies
+
+- Current bundled versions are legacy versions kept for stability.
+- A direct upgrade to newer KaTeX, markdown-it, Highlight.js, markdown-it-mark, and mhchem builds broke rendering and was reverted.
+- Dependency upgrades should be handled one library at a time with manual Anki validation.
+
 ## Current Design Decisions
 
 - Keep existing note type names for now: `KaTeX and Markdown Basic` and `KaTeX and Markdown Cloze`.
 - Do not rename note types to `KaTeX and Markdown Improved` yet, because existing notes and templates may depend on the current names.
 - If renaming is desired later, it should be handled as a separate migration task.
-- Keep `html:true` enabled for now to preserve existing behavior; the security policy is still pending.
+- Keep `html:true` enabled to preserve existing behavior; disabling it would be a separate breaking-change decision.
 - Final card templates load bundled local resources only; CDN fallback was removed to preserve offline behavior and privacy.
 
 ## Manual Testing
@@ -66,6 +72,7 @@ Developer checks before committing:
 
 ```bash
 python -m py_compile HTMLandCSS.py __init__.py
+python -m unittest discover -s tests
 python -m json.tool meta.json
 git diff --check
 ```
@@ -73,16 +80,18 @@ git diff --check
 ## Important Files
 
 - `__init__.py`: Anki hooks, model creation/update, editor preview injection, media asset copying.
-- `HTMLandCSS.py`: card templates, editor preview JavaScript, shared render helpers, card CSS.
+- `HTMLandCSS.py`: editor preview JavaScript, card-template generation, and shared render helpers.
+- `_card.css`: card CSS injected into Anki note types through `model['css']`.
 - `_highlight.css`: Catppuccin Highlight.js theme.
+- `CHANGELOG.md`: unreleased change summary.
+- `tests/test_render_contract.py`: automated render-contract checks for sensitive behavior.
 - `TESTING.md`: manual regression checklist.
 - `ROADMAP.md`: current implementation roadmap.
 - `palanificacion.md`: historical planning and project analysis.
 
 ## Known Remaining Work
 
-- Avoid broad media-folder deletes.
-- Decide policy for `html:true`.
-- Refactor `HTMLandCSS.py` into smaller maintainable assets.
-- Update bundled dependencies with regression testing.
-- Add automated tests.
+- Continue separating editor preview code if a future change requires it.
+- Update bundled dependencies one library at a time with regression testing.
+- Expand automated tests when dependency updates add new edge cases.
+- Prepare release/package only when requested.

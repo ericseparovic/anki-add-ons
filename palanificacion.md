@@ -46,14 +46,15 @@ El analisis historico de este documento conserva referencias y estados originale
 ### Pendiente
 
 - Actualizar este documento por completo si se desea eliminar referencias historicas obsoletas.
-- Decidir politica de `html:true`: mantener, hacer configurable o desactivar.
+- Mantener `html:true` activo para preservar compatibilidad; cambiarlo seria una decision de ruptura separada.
 - Verificar manualmente que las tarjetas finales cargan correctamente solo con recursos locales.
+- Actualizar dependencias externas con pruebas, de a una por vez: KaTeX, markdown-it, Highlight.js y mhchem.
 - Definir si hace falta versionar recursos copiados al media folder.
-- Evaluar si `editor.web.eval` debe reemplazarse por una integracion mas moderna.
-- Refactorizar mas profundamente `HTMLandCSS.py`, que sigue concentrando HTML, CSS y JS en strings grandes.
+- Mantener `editor.web.eval` por ahora; funciona en Anki 26.05 y no hay bug concreto que justifique cambiarlo.
+- Continuar separando la preview del editor si futuros cambios lo justifican.
 - Mejorar la limpieza de HTML pegado; sigue basada en regex y puede tener efectos secundarios.
-- Actualizar dependencias externas con pruebas: KaTeX, markdown-it, Highlight.js y mhchem.
-- Agregar tests automatizados.
+- Definir si hace falta versionar recursos copiados al media folder.
+- Ampliar tests automatizados cuando se actualicen dependencias o aparezcan nuevos casos borde.
 
 ### Decisiones de Fase 1
 
@@ -67,7 +68,8 @@ El analisis historico de este documento conserva referencias y estados originale
 Archivos propios principales:
 
 - `__init__.py`: logica Python del add-on. Crea modelos, registra hooks y copia recursos al media folder de Anki.
-- `HTMLandCSS.py`: contiene HTML, CSS y JavaScript embebido para las tarjetas y la vista previa.
+- `HTMLandCSS.py`: contiene la preview del editor, helpers JS compartidos y generacion de plantillas finales.
+- `_card.css`: contiene el CSS de tarjetas que se inyecta en los modelos de Anki.
 - `meta.json`: metadata del add-on.
 
 Recursos externos incluidos localmente:
@@ -392,9 +394,9 @@ Referencias:
 - `HTMLandCSS.py:469`
 - `HTMLandCSS.py:583`
 
-### 8. Riesgo de seguridad por `html:true`
+### 8. Politica de `html:true`
 
-Estado: no corregido.
+Estado: decidido mantener activo.
 
 Markdown-it esta configurado con `html:true`.
 
@@ -406,11 +408,11 @@ Referencias:
 - `HTMLandCSS.py:450`
 - `HTMLandCSS.py:564`
 
-Esto permite HTML arbitrario dentro de las notas. Puede ser util para usuarios avanzados, pero es riesgoso si se importan tarjetas de fuentes externas.
+Esto permite HTML arbitrario dentro de las notas. Se mantiene para preservar compatibilidad con tarjetas existentes y usuarios avanzados. Desactivarlo o hacerlo configurable queda fuera de este ciclo porque podria romper contenido existente.
 
 ### 9. Preview fragil en Anki moderno
 
-Estado: no corregido.
+Estado: evaluado; mantener implementacion actual por ahora.
 
 La preview depende de estructura interna del editor:
 
@@ -423,7 +425,7 @@ Referencias:
 - `HTMLandCSS.py:18-19`
 - `HTMLandCSS.py:30-31`
 
-Esto puede romperse con cambios de Anki, Qt o el editor.
+Esto puede romperse con cambios de Anki, Qt o el editor. Por ahora funciona en Anki 26.05 y no se cambia sin un bug concreto.
 
 ### 10. Preview limitada a dos campos
 
@@ -514,7 +516,7 @@ Versiones detectadas:
 - KaTeX local basado en version `0.12.0`
 - mhchem local basado en version `0.13.11`
 
-Esto puede afectar compatibilidad, seguridad y soporte de nuevas funciones.
+Se intento actualizar en bloque a versiones nuevas, pero rompio el renderizado y se revirtio. La actualizacion debe hacerse de a una dependencia por vez con validacion manual en Anki.
 
 ### 16. Fallback remoto contradice soporte offline real
 
@@ -554,9 +556,9 @@ Si ya existe una version vieja del recurso en media, se reemplaza manteniendo el
 
 ### 18. Borrado potencialmente peligroso
 
-Estado: no corregido.
+Estado: corregido.
 
-`update()` borra carpetas del media folder:
+`update()` ya no borra carpetas completas del media folder. Antes existia este patron:
 
 ```python
 shutil.rmtree(...)
@@ -566,7 +568,7 @@ Referencias:
 
 - `__init__.py:120-124`
 
-Si otro add-on o el usuario usa esas carpetas, podria eliminar contenido no relacionado.
+Se elimino para evitar borrar contenido no relacionado si otro add-on o el usuario usa nombres similares.
 
 ### 19. API antigua de Anki
 
@@ -630,17 +632,20 @@ Referencia:
 
 ### 23. No hay tests
 
-Estado: no corregido.
+Estado: corregido parcialmente.
 
-No existe suite de pruebas para:
+Existe `tests/test_render_contract.py` con checks automatizados para comportamiento sensible. Todavia no reemplaza las pruebas manuales completas de Anki.
 
-- Parseo de `$`.
-- Render Markdown.
-- Cloze.
-- Dark mode.
-- Copy/paste.
-- Preview.
-- Instalacion en Anki moderno.
+Cobertura inicial:
+
+- `$...$` desactivado como delimitador.
+- KaTeX ignorando `pre` y `code`.
+- Cloze preservado.
+- `markdown-it-mark` activo.
+- CSS de dark mode presente.
+- Preview con recursos `/_addons/...` y sin CDN.
+- Plantillas Basic/Cloze conservando campos esperados.
+- `update()` sin `shutil.rmtree`.
 
 ### 24. No hay documentacion del proyecto
 
@@ -698,36 +703,39 @@ La mayor deuda tecnica esta en `HTMLandCSS.py`.
 
 - Fallback CDN eliminado en tarjetas finales; verificar manualmente el comportamiento offline.
 - `_add_file()` actualiza recursos ya existentes en el media folder cuando cambia el contenido.
-- Evitar borrados amplios con `shutil.rmtree()` salvo que haya una razon concreta.
+- Borrados amplios con `shutil.rmtree()` eliminados de `update()`.
 - Definir estrategia de versionado de assets copiados a media.
 
 ### Prioridad 3: seguridad y configuracion
 
-- Decidir politica de `html:true` en markdown-it.
-- Evaluar si `html:true` debe quedar activo, ser configurable o apagarse por defecto.
+- `html:true` queda activo para preservar compatibilidad.
+- Reconsiderar solo si se planifica un cambio de ruptura o una configuracion explicita.
 - Definir si se agrega configuracion para reactivar `$...$` en modo compatibilidad.
 
 ### Prioridad 4: refactor de `HTMLandCSS.py`
 
-- Separar HTML, CSS y JS propios en archivos mas faciles de mantener.
-- Reducir strings gigantes embebidos en Python.
-- Consolidar mas la logica comun de renderizado.
+- Plantillas finales generadas desde un constructor comun: completado.
+- CSS de tarjetas separado en `_card.css`: completado.
+- Reducir strings gigantes embebidos en Python: completado parcialmente.
 - Mantener compatibilidad con Basic, Cloze y preview del editor.
+- Continuar separando preview del editor solo si futuros cambios lo requieren.
 
 ### Prioridad 5: integracion moderna con Anki
 
-- Evaluar reemplazo de `editor.web.eval` por una integracion mas estable si Anki ofrece un flujo apropiado para el editor.
+- `editor.web.eval` fue evaluado y se mantiene mientras no haya un bug concreto.
 - Mantener recursos del editor servidos desde `/_addons/...` para cumplir CSP.
 - Seguir probando en Anki 26.05 y versiones modernas.
 
 ### Prioridad 6: dependencias
 
-- Actualizar KaTeX con pruebas de formulas y fuentes.
-- Actualizar markdown-it con pruebas de Markdown, tablas y HTML.
-- Actualizar Highlight.js con pruebas de Bash, Java, C, C++, Python y otros lenguajes usados.
+- Actualizar KaTeX de a una version controlada con pruebas de formulas y fuentes.
+- Actualizar markdown-it de forma separada con pruebas de Markdown, tablas y HTML.
+- Actualizar Highlight.js de forma separada con pruebas de Bash, Java, C, C++, Python y otros lenguajes usados.
 - Confirmar version compatible de mhchem con la version de KaTeX elegida.
 
 ### Prioridad 7: pruebas automatizadas
+
+Estado: cobertura inicial completada.
 
 Casos minimos:
 
@@ -770,12 +778,12 @@ Estado: completada.
 
 Estado: completada parcialmente.
 
-- Reducir duplicacion en `HTMLandCSS.py`: completado parcialmente.
+- Reducir duplicacion en `HTMLandCSS.py`: completado.
 - Extraer JS comun: completado parcialmente.
 - Corregir `replace` sin asignacion: completado.
 - Eliminar variables globales implicitas principales: completado.
 - Evitar listeners duplicados: completado.
-- Refactor profundo de `HTMLandCSS.py`: pendiente.
+- Refactor profundo de `HTMLandCSS.py`: completado para plantillas finales y CSS de tarjetas.
 
 ### Fase 4: compatibilidad moderna
 
@@ -787,26 +795,28 @@ Estado: completada parcialmente.
 - Corregir CSP de preview en Anki 26.05: completado.
 - Corregir rutas de fuentes KaTeX en preview: completado.
 - Preview dinamica para mas de dos campos: completado.
-- Evaluar reemplazo de `editor.web.eval`: pendiente.
+- Evaluar reemplazo de `editor.web.eval`: completado; se mantiene por ahora.
 
 ### Fase 5: dependencias y seguridad
 
 Estado: completada parcialmente.
 
-- Actualizar librerias: pendiente.
-- Decidir politica de `html:true`: pendiente.
+- Actualizar librerias: pendiente; la actualizacion en bloque fue revertida porque rompio el render.
+- Decidir politica de `html:true`: completado; se mantiene activo para compatibilidad.
 - Eliminar o hacer configurable fallback CDN en tarjetas finales: completado; las tarjetas finales cargan recursos locales.
 - Reemplazar recursos obsoletos en media folder: completado.
+- Evitar borrados amplios con `shutil.rmtree()`: completado.
 - Versionar recursos copiados al media folder: pendiente de decision.
 
-Recomendacion: seguir con evitar borrados amplios con `shutil.rmtree()` y despues definir la politica de `html:true`.
+Recomendacion: seguir con actualizacion de dependencias usando los tests automatizados y el checklist manual.
 
 ### Fase 6: documentacion y publicacion
 
 Estado: pendiente.
 
 - Crear `README.md`: completado.
-- Crear changelog: pendiente.
+- Crear changelog: completado en `CHANGELOG.md`.
+- Agregar tests automatizados de render: completado con cobertura inicial.
 - Documentar pruebas manuales finales: parcialmente completado en `TESTING.md`.
 - Preparar commit/release cuando el usuario lo solicite: pendiente.
 
@@ -830,4 +840,4 @@ Objetivos principales:
 
 La copia de desarrollo ya resolvio los problemas criticos iniciales de `$`, orden de renderizado, Cloze, modo oscuro y compatibilidad basica con Anki 26.05.
 
-El siguiente paso natural es cerrar documentacion y pruebas manuales, despues avanzar con seguridad, recursos locales, actualizacion de dependencias y un refactor profundo de `HTMLandCSS.py`.
+El siguiente paso natural es avanzar con actualizacion de dependencias usando los tests automatizados y el checklist manual, y luego crear un changelog inicial.

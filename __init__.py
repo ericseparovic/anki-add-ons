@@ -301,12 +301,6 @@ def update():
         model_cloze['css'] = css
         mw.col.models.save(model_cloze)
 
-    if os.path.isdir(os.path.join(mw.col.media.dir(), "_katex")):
-        shutil.rmtree(os.path.join(mw.col.media.dir(), "_katex"))
-
-    if os.path.isdir(os.path.join(mw.col.media.dir(), "_markdown-it")):
-        shutil.rmtree(os.path.join(mw.col.media.dir(), "_markdown-it"))
-
     addon_path = os.path.join(os.path.dirname(os.path.realpath(__file__)))
 
     _add_file(os.path.join(addon_path, "_katex.min.js"), "_katex.min.js")

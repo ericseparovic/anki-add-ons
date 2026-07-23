@@ -65,12 +65,13 @@ Completed:
 - Fixed the `replace` without assignment bug.
 - Reduced implicit globals in the editor preview.
 - Prevented duplicate preview listeners.
+- Generated final card templates from a shared Python builder.
+- Moved card CSS out to `_card.css` while keeping Anki model CSS updates unchanged.
 
 Remaining:
 
-- Refactor `HTMLandCSS.py` more deeply.
-- Split large embedded strings into smaller, maintainable modules or assets.
 - Improve paste cleanup, which is still regex-based.
+- Consider separating editor preview JavaScript if future changes make it necessary.
 
 Recommendation:
 
@@ -93,14 +94,15 @@ Completed:
 - Fixed KaTeX font paths in the editor preview.
 - Made editor preview support more than two fields.
 - Editor preview now uses real field names.
+- Evaluated `editor.web.eval`; keep it for now because it works on Anki 26.05 and no safer editor-specific replacement is needed without a concrete bug.
 
 Remaining:
 
-- Evaluate whether `editor.web.eval` can be replaced with a more stable editor integration.
+- None for current compatibility scope.
 
 Recommendation:
 
-- Keep `editor.web.eval` for now unless it causes a concrete bug. The current behavior works on Anki 26.05.
+- Revisit editor integration only if Anki changes the editor DOM/API or a concrete preview bug appears.
 
 ## Phase 5: Resources, Dependencies, And Security
 
@@ -114,22 +116,22 @@ Completed:
 
 - Removed CDN fallback from final card templates; cards now load bundled local resources only.
 - Improved `_add_file()` so bundled media resources replace stale copies safely.
+- Removed broad `shutil.rmtree()` media-folder deletes from `update()`.
+- Kept `html:true` enabled to preserve existing behavior.
 
 Remaining:
 
-- Avoid broad `shutil.rmtree()` deletes unless strictly needed.
 - Define a versioning strategy for copied media resources.
-- Decide whether `html:true` should stay enabled, become configurable, or be disabled.
 - Decide whether `$...$` should be configurable for compatibility mode.
-- Update KaTeX, markdown-it, Highlight.js, and mhchem with regression testing.
+- Update bundled dependencies one library at a time with manual Anki validation.
 
 Recommendation:
 
-- Continue by avoiding broad deletes. It is concrete, high-value, and easier to verify than dependency upgrades.
+- Continue by updating bundled dependencies one library at a time, starting with the lowest-risk library.
 
 ## Phase 6: Tests And Release Prep
 
-Status: pending.
+Status: partial.
 
 Purpose:
 
@@ -137,7 +139,6 @@ Purpose:
 
 Remaining:
 
-- Add automated tests for render-sensitive transformations.
 - Create a changelog.
 - Finalize manual testing instructions.
 - Prepare release/package only when requested.
@@ -156,10 +157,13 @@ Editor preview assets do not trigger CSP errors
 KaTeX fonts resolve under /_addons/.../fonts in preview
 ```
 
+Completed:
+
+- Added automated render-contract tests for resource loading, math delimiters, code-block protection, Cloze preservation, mark support, dark mode CSS, preview exports, template fields, and media-delete safety.
+- Created initial `CHANGELOG.md`.
+
 ## Recommended Next Work
 
-1. Phase 5 resources: avoid broad `shutil.rmtree()` deletes.
-2. Phase 5 security: decide `html:true` policy.
-3. Phase 3 refactor: split `HTMLandCSS.py` after behavior is stable.
-4. Phase 6 tests: add automated coverage for rendering edge cases.
-5. Phase 5 dependencies: update bundled libraries with regression checks.
+1. Phase 5 dependencies: update bundled libraries one at a time with manual Anki validation.
+2. Phase 5 resources: decide whether copied media resources need explicit versioning.
+3. Phase 6 release prep: finalize manual testing instructions.
