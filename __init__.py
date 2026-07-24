@@ -17,7 +17,7 @@ mw.addonManager.setWebExports(__name__, r".*\.(css|js|ttf|woff|woff2)")
 def markdownPreview(editor):
     """ This function runs when the user opens the editor, creates the markdown preview area """
     note_type = editor.note.note_type()
-    if note_type and note_type["name"] in [MODEL_NAME + " Basic", MODEL_NAME + " Cloze"]:
+    if note_type:
         field_names = [field["name"] for field in note_type["flds"]]
         editor_js = HTMLforEditor.replace("__ADDON_WEB_PATH__", ADDON_WEB_PATH)
         editor_js = editor_js.replace("__FIELD_NAMES__", json.dumps(field_names))
@@ -219,10 +219,46 @@ def markdownPreview(editor):
         editor.web.eval("""
 					var area = document.getElementById('markdown-area');
 					if(area) area.remove();
+                    window.markdownPreviewRender = null;
         """)
 
 
 gui_hooks.editor_did_load_note.append(markdownPreview)
+
+
+def show_markdown_preview(editor):
+    """Renders the editor preview when the toolbar Preview button is clicked."""
+    if not editor.note:
+        return
+
+    markdownPreview(editor)
+
+    parts = []
+    for field_name, value in editor.note.items():
+        if value:
+            parts.append(value)
+
+    text = "\n".join(parts)
+    editor.web.eval(f"""
+        window.markdownPreviewPendingText = {json.dumps(text)};
+        if (window.markdownPreviewRender) {{
+            window.markdownPreviewRender(window.markdownPreviewPendingText);
+        }}
+    """)
+
+
+def add_markdown_preview_button(buttons, editor):
+    buttons.append(editor.addButton(
+        icon=None,
+        cmd="markdownPreview",
+        func=show_markdown_preview,
+        tip="Show Markdown preview",
+        label="Preview",
+        id="markdown-preview-button",
+    ))
+
+
+gui_hooks.editor_did_init_buttons.append(add_markdown_preview_button)
 
 
 def create_model_if_necessary():

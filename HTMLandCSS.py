@@ -6,13 +6,16 @@ from pathlib import Path
 ADDON_DIR = Path(__file__).resolve().parent
 
 HTMLforEditor = """
-        if (window.markdownPreviewKeyupFunc) {
-            document.removeEventListener('keyup', window.markdownPreviewKeyupFunc);
-            window.markdownPreviewKeyupFunc = null;
+        if (window.markdownPreviewCleanup) {
+            window.markdownPreviewCleanup();
+            window.markdownPreviewCleanup = null;
         }
+        window.markdownPreviewRender = null;
+        window.markdownPreviewPendingText = null;
 
         var area = document.getElementById('markdown-area');
         if(area) area.remove();
+
         area = document.createElement('markdown-area');
         area.id = 'markdown-area';
         area.style.display = 'inline-block';
@@ -29,13 +32,16 @@ HTMLforEditor = """
 
         if (fields === null) {
 			fields = document.getElementsByClassName('fields')[0];
-			previewParent = fields;
+			if (fields) {
+				previewParent = fields;
+			}
 		}
 
-		var keyupFunc = function() {
-			var text = collectFieldText();
+		var updatePreview = function(text) {
 			if (text) {
 				render(text);
+			} else {
+				clearPreview();
 			}
 		}
 
@@ -56,13 +62,17 @@ HTMLforEditor = """
 				];
 
 				var main = function() {
-									keyupFunc();
-									window.markdownPreviewKeyupFunc = keyupFunc;
-									document.addEventListener('keyup', window.markdownPreviewKeyupFunc);
+					window.markdownPreviewRender = updatePreview;
+					window.markdownPreviewCleanup = function() {
+						window.markdownPreviewRender = null;
+					};
+					if (window.markdownPreviewPendingText !== null) {
+						window.markdownPreviewRender(window.markdownPreviewPendingText);
+					}
 				}
 
 
-                                Promise.all(getResources).then(() => getScript("__ADDON_WEB_PATH__/_mhchem.js")).then(main).catch(showFallbackPreview);
+                                Promise.all(getResources).then(() => getScript("__ADDON_WEB_PATH__/_mhchem.js")).then(main).catch(enableFallbackPreview);
 				
 
 				function getScript(path) {
@@ -101,8 +111,18 @@ HTMLforEditor = """
 					});
 				}
 
-				function showFallbackPreview() {
-					area.textContent = replaceInString(collectFieldText());
+				function enableFallbackPreview() {
+					window.markdownPreviewRender = showFallbackPreview;
+					window.markdownPreviewCleanup = function() {
+						window.markdownPreviewRender = null;
+					};
+					if (window.markdownPreviewPendingText !== null) {
+						window.markdownPreviewRender(window.markdownPreviewPendingText);
+					}
+				}
+
+				function showFallbackPreview(text) {
+					area.textContent = replaceInString(text || '');
 					show();
 				}
 
@@ -178,6 +198,12 @@ HTMLforEditor = """
 
 				function show() {
 					area.style.visibility = "visible";
+				}
+
+				function clearPreview() {
+					area.innerHTML = "";
+					area.textContent = "";
+					area.style.visibility = "hidden";
 				}
 
 

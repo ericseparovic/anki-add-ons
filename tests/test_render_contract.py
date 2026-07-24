@@ -64,6 +64,37 @@ class RenderContractTests(unittest.TestCase):
         self.assertIn('__ADDON_WEB_PATH__/fonts/_', preview)
         self.assertNotIn('https://', preview)
 
+    def test_preview_clears_when_fields_are_empty(self):
+        preview = HTMLandCSS.HTMLforEditor
+        self.assertIn('clearPreview();', preview)
+        self.assertIn('area.innerHTML = "";', preview)
+        self.assertIn('area.style.visibility = "hidden";', preview)
+
+    def test_preview_uses_manual_button(self):
+        preview = HTMLandCSS.HTMLforEditor
+        init_py = (ROOT / '__init__.py').read_text(encoding='utf-8')
+        self.assertIn('gui_hooks.editor_did_init_buttons.append(add_markdown_preview_button)', init_py)
+        self.assertIn('editor.addButton(', init_py)
+        self.assertIn('label="Preview"', init_py)
+        self.assertIn('id="markdown-preview-button"', init_py)
+        self.assertIn('window.markdownPreviewRender = updatePreview;', preview)
+        self.assertIn('window.markdownPreviewPendingText = null;', preview)
+        self.assertIn('window.markdownPreviewRender(window.markdownPreviewPendingText);', preview)
+        self.assertIn('var previewParent = document.body;', preview)
+        self.assertIn('markdownPreview(editor)', init_py)
+        self.assertIn('for field_name, value in editor.note.items():', init_py)
+        self.assertIn('parts.append(value)', init_py)
+        self.assertNotIn('parts.append(f"# {field_name}', init_py)
+        self.assertIn('window.markdownPreviewPendingText = {json.dumps(text)};', init_py)
+        self.assertIn('window.markdownPreviewRender(window.markdownPreviewPendingText);', init_py)
+        self.assertNotIn("document.addEventListener('keyup'", preview)
+        self.assertNotIn('setInterval(updatePreview', preview)
+
+    def test_non_markdown_note_type_removes_preview_area(self):
+        init_py = (ROOT / '__init__.py').read_text(encoding='utf-8')
+        self.assertIn("document.getElementById('markdown-area')", init_py)
+        self.assertIn('window.markdownPreviewRender = null;', init_py)
+
     def test_generated_templates_keep_expected_fields(self):
         self.assertIn('{{Front}}', HTMLandCSS.front)
         self.assertIn('{{Front}}', HTMLandCSS.back)
